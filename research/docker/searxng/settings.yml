@@ -1,0 +1,29 @@
+# Minimal SearXNG configuration for the harness.
+#
+# The only non-default thing that matters: the json format must be enabled, or
+# the searxng backend gets HTML back and every retrieval scores zero.
+#
+# Pin engines if you want reproducible runs - results move as engines change.
+
+use_default_settings: true
+
+general:
+  instance_name: "mrt-research"
+  donation_url: false
+  contact_url: false
+
+server:
+  secret_key: "change-me-for-anything-but-local-use"
+  limiter: false          # no rate limiting: this instance is local and single-user
+  image_proxy: false
+
+search:
+  safe_search: 0
+  autocomplete: ""
+  default_lang: "en"
+  formats:
+    - html
+    - json                # required by research/search/searxng.js
+
+ui:
+  static_use_hash: true

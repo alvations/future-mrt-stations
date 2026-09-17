@@ -9,12 +9,12 @@
    With the offline `fixtures` backend the corpus is the report's own 79
    sources, so the target is always findable and the run is reproducible. */
 'use strict';
-var path = require('path');
 var prompt = require('../lib/prompt.js');
 var J = require('../lib/json.js');
 var M = require('../lib/metrics.js');
-var findings = require(path.join(__dirname, '..', '..', 'assets', 'js', 'data', 'findings.js'));
-var sources = require(path.join(__dirname, '..', '..', 'assets', 'js', 'data', 'sources.js'));
+var dataset = require('../lib/dataset.js');
+var findings = dataset.findings;
+var sources = dataset.sources;
 
 var SRC = {};
 sources.forEach(function (s) { SRC[s.id] = s; });

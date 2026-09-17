@@ -2,11 +2,10 @@
    sources. The rubric is given in the prompt, so this measures rubric
    application rather than memory of the report. */
 'use strict';
-var path = require('path');
 var prompt = require('../lib/prompt.js');
 var J = require('../lib/json.js');
 var M = require('../lib/metrics.js');
-var sources = require(path.join(__dirname, '..', '..', 'assets', 'js', 'data', 'sources.js'));
+var sources = require('../lib/dataset.js').sources;
 
 module.exports = {
   id: 'grade-sources',

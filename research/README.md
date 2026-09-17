@@ -8,6 +8,21 @@ because of who produced it.
 Claude is one entry in `models.json`, no different from a local Llama or Qwen.
 Nothing in the harness treats any provider specially.
 
+## Install
+
+The harness is a self-contained package (`mrt-research-harness`) that lives in
+this repo. Nothing needs installing to use it from a clone — it has no runtime
+dependencies — but `npm install` at the repo root links it as a workspace, which
+gives you the `mrt-research` command and lets you `require()` it by name.
+
+```bash
+git clone https://github.com/alvations/future-mrt-stations
+cd future-mrt-stations
+npm install          # optional: links the workspace, no third-party packages
+```
+
+## Run
+
 ```bash
 # Works offline, no keys, in CI: proves the harness discriminates
 npm run research:compare
@@ -26,6 +41,9 @@ node research/run.js --models qwen25-32b --limit 3
 node research/run.js --models qwen25-32b --tasks find-sources --search searxng
 ```
 
+Once linked, `npx mrt-research --models ...` is the same command from anywhere
+in the repo, and `--help` lists every option.
+
 Each run writes `research/runs/<id>/`: `meta.json`, one JSONL per model-task
 pair with every prompt result and its score, `summary.json`, and a generated
 `report.md`. See `example-report.md` for what that looks like.
@@ -43,6 +61,78 @@ Six stages, 253 items, gold labels from the vendored analysis —
 | `score-dgi` | quantitative reasoning on the demand index | 14 | `exact_rate` |
 | `verify-corrections` | self-correction when evidence kills a claim | 10 | `accuracy` |
 | `forecast` | calibrated judgement on 22 dated forecasts | 22 | `agreement_mae` |
+
+## One command for the open-source path
+
+`docker-compose.yml` brings up the two local backends the harness expects, both
+bound to localhost:
+
+```bash
+docker compose -f research/docker-compose.yml up -d
+docker compose -f research/docker-compose.yml exec ollama ollama pull qwen2.5:32b
+node research/run.js --models qwen25-32b --search searxng
+```
+
+Ollama lands on the port `models.json` already points at, and SearXNG on the
+port `search/searxng.js` defaults to, so a default run needs no further
+configuration. The bundled SearXNG settings enable the JSON output format —
+without it the retriever gets HTML back and every retrieval silently scores
+zero, which is why a test asserts it. Uncomment the GPU block in the compose
+file if you have one; without it Ollama runs on CPU, fine for 7–8B models and
+slow but workable at 32B.
+
+## Use as a library
+
+```js
+const { runComparison, scoreRun } = require('mrt-research-harness');
+
+const { runId, summary } = await runComparison({
+  models: ['qwen25-32b', 'claude-opus-5'],
+  tasks: ['grade-sources', 'score-dgi'],
+  search: 'fixtures',
+  repeats: 3,                       // measure run-to-run variance
+  onProgress: e => console.log(e.model, e.task, e.headline.value)
+});
+
+console.log(scoreRun(runId));       // path to the generated report.md
+```
+
+Subpath exports for the pluggable pieces: `mrt-research-harness/providers`,
+`/tasks`, `/search`, `/dataset`, `/metrics`, `/json`.
+
+## Point it at a different corpus
+
+The tasks are about a research *process*, not about Singapore. Everything the
+harness knows about its data goes through `lib/dataset.js`, so it can be scored
+against another corpus:
+
+```bash
+MRT_DATA_ROOT=/path/to/your/dataset node research/run.js --models qwen25-32b
+```
+
+A dataset root is a directory holding `js/data/{sources,findings,areas,
+predictions}.js` and `js/dgi.js`, each a UMD module exporting its array — the
+shapes are documented in `../AGENTS.md` §6. Every run records which corpus it
+resolved and how, so a report always says what it was scored against.
+
+## Layout
+
+```
+package.json        the package manifest: exports, bin, files
+index.js            public API - runComparison, scoreRun, and the registries
+run.js              CLI (also the `mrt-research` bin)
+score.js            turns a finished run into report.md
+models.json         the model registry - adding a model is one entry here
+lib/dataset.js      the single seam onto the corpus being scored against
+lib/runner.js       runComparison(): the harness as a function
+lib/{json,metrics,prompt,store}.js   parsing, scoring, templates, run storage
+providers/          anthropic, openai-compat, ollama, mock
+search/             fixtures, searxng, duckduckgo
+tasks/              the six research components
+prompts/            one plain markdown template per task, shared by every model
+fixtures/           the self-correction fixture
+docker-compose.yml  local Ollama + SearXNG
+```
 
 ## Adding a model
 

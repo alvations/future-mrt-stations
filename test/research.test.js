@@ -324,6 +324,145 @@ section('Provider adapters send the right request');
     fs.rmSync(runDir, { recursive: true, force: true });
   }
 
+  /* ---- 8. The package contract ---- */
+  section('Packaging');
+  var pkg = JSON.parse(fs.readFileSync(path.join(R, 'package.json'), 'utf8'));
+  ok('package has a name and version', !!pkg.name && /^\d+\.\d+\.\d+$/.test(pkg.version), pkg.version);
+  ok('package declares MIT, matching the repo', pkg.license === 'MIT');
+  ok('package declares the node it needs', !!(pkg.engines && pkg.engines.node));
+  ok('package is private until someone chooses to publish it', pkg.private === true);
+  ok('package has no runtime dependencies', Object.keys(pkg.dependencies || {}).length === 0);
+
+  /* Every advertised entry point must exist and load. A broken `exports` map is
+     invisible until someone installs the package. */
+  Object.keys(pkg.exports).forEach(function (sub) {
+    var rel = pkg.exports[sub];
+    var abs = path.join(R, rel);
+    ok('exports "' + sub + '" points at a real file', fs.existsSync(abs), rel);
+    if (fs.existsSync(abs) && !/\.json$/.test(rel)) {
+      var loaded = null;
+      try { loaded = require(abs); } catch (e) { loaded = null; ok('exports "' + sub + '" loads', false, e.message); }
+      if (loaded) ok('exports "' + sub + '" loads', typeof loaded === 'object' || typeof loaded === 'function');
+    }
+  });
+
+  /* `files` decides what a published tarball contains; a typo silently ships a
+     package that cannot run. */
+  pkg.files.forEach(function (f) {
+    ok('files entry "' + f + '" exists', fs.existsSync(path.join(R, f.replace(/\/$/, ''))));
+  });
+  ['index.js', 'run.js', 'score.js', 'models.json', 'lib/', 'providers/', 'tasks/', 'search/', 'prompts/', 'fixtures/'].forEach(function (needed) {
+    ok('files list ships ' + needed, pkg.files.indexOf(needed) >= 0);
+  });
+
+  var binPath = path.join(R, pkg.bin['mrt-research']);
+  ok('bin target exists', fs.existsSync(binPath));
+  ok('bin target has a shebang', fs.readFileSync(binPath, 'utf8').slice(0, 2) === '#!');
+  ok('bin target is executable', !!(fs.statSync(binPath).mode & 0o111));
+
+  var api = require(path.join(R, 'index.js'));
+  ['runComparison', 'scoreRun', 'providers', 'tasks', 'search', 'dataset', 'metrics', 'json', 'version'].forEach(function (k) {
+    ok('public API exposes ' + k, api[k] != null);
+  });
+  ok('runComparison is callable', typeof api.runComparison === 'function');
+  ok('scoreRun is callable', typeof api.scoreRun === 'function');
+  ok('API version matches the manifest', api.version === pkg.version);
+
+  /* ---- 9. The dataset seam ---- */
+  section('Dataset seam');
+  var dataset = require(path.join(R, 'lib', 'dataset.js'));
+  var d = dataset.describe();
+  ok('dataset resolves', !!d.root && !!d.resolvedVia);
+  ok('dataset counts match the shipped data', d.counts.sources === 79 && d.counts.findings === 64 &&
+    d.counts.areas === 14 && d.counts.predictions === 22, JSON.stringify(d.counts));
+  ok('dataset exposes every module the tasks need',
+    ['sources', 'findings', 'areas', 'predictions', 'dgi'].every(function (k) { return !!dataset.load(k); }));
+  ok('unknown dataset module is rejected', (function () {
+    try { dataset.load('nope'); return false; } catch (e) { return /unknown dataset module/.test(e.message); }
+  })());
+
+  /* Nothing may reach across the tree any more: that coupling is what stopped
+     the harness being a package, and it would creep back silently. */
+  var reachArounds = [];
+  (function walk(dir) {
+    fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
+      var full = path.join(dir, e.name);
+      if (e.isDirectory()) { if (e.name !== 'runs' && e.name !== 'node_modules') walk(full); return; }
+      if (!/\.js$/.test(e.name)) return;
+      if (full === path.join(R, 'lib', 'dataset.js')) return;   /* the one sanctioned seam */
+      if (/'assets'|\.\.\/\.\.\/assets/.test(fs.readFileSync(full, 'utf8'))) reachArounds.push(path.relative(R, full));
+    });
+  })(R);
+  ok('only lib/dataset.js knows where the data lives', reachArounds.length === 0, reachArounds.join(', '));
+
+  /* Resolution order and the failure message, both in child processes because
+     the resolver caches its answer. */
+  var envRun = cp.execFileSync(process.execPath, ['-e',
+    'console.log(JSON.stringify(require(process.argv[1]).describe()))', path.join(R, 'lib', 'dataset.js')],
+    { env: Object.assign({}, process.env, { MRT_DATA_ROOT: path.join(__dirname, '..', 'assets') }), encoding: 'utf8' });
+  ok('MRT_DATA_ROOT takes precedence', JSON.parse(envRun).resolvedVia === 'env', envRun.trim());
+
+  var failed = '';
+  try {
+    cp.execFileSync(process.execPath, ['-e',
+      'require(process.argv[1]).describe()', path.join(R, 'lib', 'dataset.js')],
+      { env: Object.assign({}, process.env, { MRT_DATA_ROOT: '/nonexistent-dataset-root' }), encoding: 'utf8', stdio: 'pipe' });
+  } catch (e) { failed = String(e.stderr || ''); }
+  ok('a bogus MRT_DATA_ROOT still falls back to the repo', failed === '', failed.slice(0, 120));
+
+  var noData = '';
+  try {
+    cp.execFileSync(process.execPath, ['-e',
+      'require(process.argv[1]).describe()', path.join(R, 'lib', 'dataset.js')],
+      { cwd: '/tmp', env: Object.assign({}, process.env, { MRT_DATA_ROOT: '/nonexistent' }), encoding: 'utf8', stdio: 'pipe' });
+  } catch (e) { noData = String(e.stderr || ''); }
+  /* Inside the repo the fallback always succeeds, so this only asserts the
+     error text exists for the case where it cannot. */
+  ok('the resolver documents its search path in code',
+    /Looked in:/.test(fs.readFileSync(path.join(R, 'lib', 'dataset.js'), 'utf8')));
+
+  /* ---- 10. Programmatic API end to end ---- */
+  section('Programmatic API');
+  var progress = [];
+  var apiRun = await api.runComparison({
+    models: ['mock-oracle', 'mock-weak'],
+    tasks: ['verify-corrections'],
+    limit: 4,
+    cache: false,
+    runId: 'apitest-' + process.pid,
+    onProgress: function (e) { progress.push(e); }
+  });
+  try {
+    ok('runComparison returns a run id and directory', !!apiRun.runId && fs.existsSync(apiRun.dir));
+    ok('runComparison reports progress per model-task pair', progress.length === 2, String(progress.length));
+    ok('runComparison returns the summary in-process', apiRun.summary.results.length === 2);
+    ok('meta records which dataset was used', apiRun.meta.dataset.counts.sources === 79);
+    ok('meta records the harness version', apiRun.meta.harness === pkg.version);
+    var oracleEntry = apiRun.summary.results.find(function (r) { return r.model === 'mock-oracle'; });
+    ok('oracle still scores perfectly through the API', oracleEntry.headline.value === 1);
+    var reportPath = api.scoreRun(apiRun.runId);
+    ok('scoreRun writes a report', fs.existsSync(reportPath));
+  } finally {
+    fs.rmSync(apiRun.dir, { recursive: true, force: true });
+  }
+
+  /* ---- 11. Environment packaging ---- */
+  section('Local environment');
+  var compose = path.join(R, 'docker-compose.yml');
+  ok('a compose file ships', fs.existsSync(compose));
+  var composeText = fs.existsSync(compose) ? fs.readFileSync(compose, 'utf8') : '';
+  ok('compose provides ollama', /ollama/.test(composeText));
+  ok('compose provides searxng', /searxng/.test(composeText));
+  ok('compose binds ollama to the port models.json expects', /11434:11434/.test(composeText));
+  ok('compose binds searxng to the port the backend defaults to', /8888:8080/.test(composeText));
+  ok('compose keeps services on localhost', (composeText.match(/127\.0\.0\.1:/g) || []).length >= 2);
+  var searxSettings = path.join(R, 'docker', 'searxng', 'settings.yml');
+  ok('searxng settings ship', fs.existsSync(searxSettings));
+  /* Without the json format the retriever silently scores zero, so this is
+     worth a test rather than a comment. */
+  ok('searxng settings enable the json format the backend needs',
+    fs.existsSync(searxSettings) && /formats:[\s\S]*json/.test(fs.readFileSync(searxSettings, 'utf8')));
+
   console.log('\n' + pass + ' passed, ' + fail + ' failed');
   process.exit(fail ? 1 : 0);
 })().catch(function (e) {

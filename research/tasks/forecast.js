@@ -11,12 +11,12 @@
    Once outcomes are recorded (see UPDATING.md section 5), the same task reports
    a real Brier score automatically. */
 'use strict';
-var path = require('path');
 var prompt = require('../lib/prompt.js');
 var J = require('../lib/json.js');
 var M = require('../lib/metrics.js');
-var predictions = require(path.join(__dirname, '..', '..', 'assets', 'js', 'data', 'predictions.js'));
-var findings = require(path.join(__dirname, '..', '..', 'assets', 'js', 'data', 'findings.js'));
+var dataset = require('../lib/dataset.js');
+var predictions = dataset.predictions;
+var findings = dataset.findings;
 
 var FIND = {};
 findings.forEach(function (f) { FIND[f.id] = f; });

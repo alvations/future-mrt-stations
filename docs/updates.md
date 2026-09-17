@@ -26,3 +26,14 @@ identical prompts, parsing and scoring.
 - **Backends:** `openai-compat` (vLLM, llama.cpp, TGI, LM Studio, Ollama `/v1`, hosted gateways), `ollama` native, `anthropic`, and two offline mock fixtures. Search is pluggable too: offline fixtures, SearXNG, DuckDuckGo.
 - **Honesty:** `forecast` measures agreement with the reference analysis, not accuracy, because nothing has resolved. Determinism is recorded per run because it is not uniform — the current Claude models reject `temperature` outright.
 - **Guardrail:** a model's answer is not a citation. Harness output never enters the map data except through UPDATING.md §3.
+
+## 2026-09-17 — research harness packaged
+
+Turned `research/` into a self-contained package rather than scripts glued to
+this repo.
+
+- **`mrt-research-harness`**: own `package.json` with `exports`, `bin` (`mrt-research`) and a `files` list; linked as an npm workspace from the root. No runtime dependencies, so a clone still works with no install.
+- **Library API** (`research/index.js`): `runComparison()` and `scoreRun()` alongside the provider, task and search registries, so the comparison can be embedded instead of shelled out to. The CLI is now a thin wrapper over `lib/runner.js`.
+- **One dataset seam** (`research/lib/dataset.js`): six files used to reach into `../../assets`, which meant the harness could only run inside this repo against this one corpus. `MRT_DATA_ROOT` now points the same six tasks at a different corpus, and every run records which corpus it resolved and how.
+- **Local environment**: `docker-compose.yml` for Ollama and SearXNG on localhost, with SearXNG settings that enable the JSON format the retriever needs. Schema-validated with `docker compose config`; not run end to end here, as this environment has no Docker daemon.
+- 335 harness assertions, up from 254: the `exports` map and `files` list, the bin's shebang and mode, the public API surface, dataset resolution order and its failure message, a guard that nothing reaches back into `assets/`, and the compose/SearXNG configuration.

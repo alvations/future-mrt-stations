@@ -27,7 +27,7 @@ publishes the site to GitHub Pages (`.github/workflows/pages.yml`).
 - **[UPDATING.md](UPDATING.md)** — keeping the map current: when to check, which sources to search, what to edit when an announcement lands, how to score a forecast.
 - **[docs/analysis-v2.0.md](docs/analysis-v2.0.md)** — the source analysis the whole app renders, vendored so the repo is self-contained. The test suite checks the data against it.
 - **[docs/updates.md](docs/updates.md)** — log of changes absorbed over time.
-- **[research/](research/README.md)** — a model-agnostic harness that re-runs the six components of the research process (source discovery, appraisal, citation attribution, quantitative reasoning, self-correction, forecasting) against any model, scored identically, so the analysis can be reproduced with a different reasoner instead of trusted because of who produced it. Claude is one entry in `research/models.json`; a local Llama or Qwen is another.
+- **[research/](research/README.md)** — `mrt-research-harness`, a self-contained package (workspace-linked, zero runtime dependencies, CLI + library API, Docker Compose for local models) that re-runs the six components of the research process (source discovery, appraisal, citation attribution, quantitative reasoning, self-correction, forecasting) against any model, scored identically, so the analysis can be reproduced with a different reasoner instead of trusted because of who produced it. Claude is one entry in `research/models.json`; a local Llama or Qwen is another.
 
 ## What the map shows
 

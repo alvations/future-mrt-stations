@@ -3,12 +3,12 @@
    it is the task most likely to separate models, because the register has 79
    entries and guessing is heavily penalised by precision. */
 'use strict';
-var path = require('path');
 var prompt = require('../lib/prompt.js');
 var J = require('../lib/json.js');
 var M = require('../lib/metrics.js');
-var findings = require(path.join(__dirname, '..', '..', 'assets', 'js', 'data', 'findings.js'));
-var sources = require(path.join(__dirname, '..', '..', 'assets', 'js', 'data', 'sources.js'));
+var dataset = require('../lib/dataset.js');
+var findings = dataset.findings;
+var sources = dataset.sources;
 
 var REGISTER = sources.map(function (s) {
   return '- ' + s.id + ' (grade ' + s.grade + '): ' + s.title + ' - ' + s.publisher + ', ' + s.date;

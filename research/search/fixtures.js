@@ -10,8 +10,7 @@
    to be a good search engine - it is meant to be the SAME search engine for
    every model. */
 'use strict';
-var path = require('path');
-var sources = require(path.join(__dirname, '..', '..', 'assets', 'js', 'data', 'sources.js'));
+var sources = require('../lib/dataset.js').sources;
 
 function tokenise(s) {
   return String(s || '').toLowerCase().split(/[^a-z0-9]+/).filter(function (t) { return t.length > 2; });

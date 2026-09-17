@@ -7,12 +7,12 @@
    sloppy on absolute values and still order priorities correctly - that
    distinction matters for this kind of research. */
 'use strict';
-var path = require('path');
 var prompt = require('../lib/prompt.js');
 var J = require('../lib/json.js');
 var M = require('../lib/metrics.js');
-var areas = require(path.join(__dirname, '..', '..', 'assets', 'js', 'data', 'areas.js'));
-var dgi = require(path.join(__dirname, '..', '..', 'assets', 'js', 'dgi.js'));
+var dataset = require('../lib/dataset.js');
+var areas = dataset.areas;
+var dgi = dataset.dgi;
 
 var RESIDENTS_PER_HOME = dgi.DEFAULTS.residentsPerHome;
 

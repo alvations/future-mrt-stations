@@ -119,9 +119,15 @@ test/app.test.js            the map and data suite, no dependencies
 test/research.test.js       the harness suite, no network
 docs/analysis-v2.0.md       the source analysis this app renders
 docs/updates.md             log of changes made to the data over time
-research/                   model-agnostic harness for redoing the research
-                            with any model - see research/README.md
+research/                   mrt-research-harness: a self-contained package for
+                            redoing the research with any model. CLI, library
+                            API, its own package.json and tests.
+                            See research/README.md
 ```
+
+The harness is a workspace package, so `npm install` at the root links it and
+`require('mrt-research-harness')` resolves. It is not required: everything runs
+from a clone with no install, because nothing here has runtime dependencies.
 
 Data files are UMD modules: the same file is a `<script>` in the browser and a
 `require()` in the tests, with no build step. Keep that pattern — it is why the
@@ -258,6 +264,13 @@ is one entry in `research/models.json`; a local Llama or Qwen is another. See
 It exists because a research output that only holds when one particular model
 produces it is worth knowing about. It is tooling, not map data: see ground
 rule 5.
+
+It is packaged rather than glued to this repo. Everything it knows about the
+corpus goes through `research/lib/dataset.js`, so `MRT_DATA_ROOT=/some/corpus`
+points the same six tasks at different data — the tasks are about research
+process, not about Singapore. A test enforces that no other file in `research/`
+reaches back into `assets/`, because that coupling is what stopped it being a
+package and would creep back silently.
 
 ## 13. Decisions and known issues
 

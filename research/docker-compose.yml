@@ -1,0 +1,44 @@
+# Local, open-source backends for the harness - one command, no accounts.
+#
+#   docker compose -f research/docker-compose.yml up -d
+#   docker compose -f research/docker-compose.yml exec ollama ollama pull qwen2.5:32b
+#   node research/run.js --models qwen25-32b --search searxng
+#
+# Both services bind to localhost only. Ollama's default port matches the
+# baseUrl in models.json, and SEARXNG_URL defaults to the port below, so a
+# default run needs no extra configuration.
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: mrt-research-ollama
+    ports:
+      - "127.0.0.1:11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    restart: unless-stopped
+    # Uncomment to use an NVIDIA GPU. Without it Ollama runs on CPU, which is
+    # fine for 7-8B models and slow but workable for 32B.
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  searxng:
+    image: searxng/searxng:latest
+    container_name: mrt-research-searxng
+    ports:
+      - "127.0.0.1:8888:8080"
+    volumes:
+      - ./docker/searxng:/etc/searxng:ro
+    environment:
+      # Override in a .env file or your shell for anything beyond local use.
+      - SEARXNG_SECRET=${SEARXNG_SECRET:-change-me-for-anything-but-local-use}
+      - SEARXNG_BASE_URL=http://localhost:8888/
+    restart: unless-stopped
+
+volumes:
+  ollama-models:
