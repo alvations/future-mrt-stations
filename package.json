@@ -1,0 +1,11 @@
+{
+  "name": "future-mrt-stations",
+  "version": "1.0.0",
+  "description": "Interactive map of Singapore's committed, studied and speculative future MRT lines, with the reasoning and sources behind every station.",
+  "private": true,
+  "scripts": {
+    "test": "node test/app.test.js",
+    "start": "npx --yes http-server -p 8080 -c-1 ."
+  },
+  "license": "MIT"
+}
