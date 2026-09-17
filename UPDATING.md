@@ -170,10 +170,31 @@ would score. Put the running score and the count in `docs/updates.md`.
 A forecast that turned out wrong is not an embarrassment to be edited away. The
 value of this repo is that it recorded a number before the answer was known.
 
-## 6. After any change
+## 6. Re-running the research with another model
+
+The six components of the process that produced this analysis are implemented in
+`research/` as scoreable tasks, so any model can redo them:
 
 ```bash
-npm test          # must pass; it checks provenance, not just syntax
+node research/run.js --models qwen25-32b,llama31-8b,claude-opus-5
+```
+
+Two ways this helps maintenance:
+
+- **Before you trust a judgement call**, see whether models disagree about it.
+  Wide disagreement on a source's grade or a forecast's probability is a sign
+  the call rests on something thin.
+- **After new evidence lands**, re-run `verify-corrections` with the new claim
+  and evidence added to `research/fixtures/corrections.json` to check that the
+  withdrawal is as obvious as you think it is.
+
+What a model outputs is never a citation. It goes through §3 like anything else:
+primary source, register entry, finding, then the map.
+
+## 7. After any change
+
+```bash
+npm test          # both suites; checks provenance, not just syntax
 ```
 
 Then the browser check in AGENTS.md §3, at desktop and phone width, if you

@@ -12,8 +12,9 @@ probability forecasts.
 **Live site:** https://alvations.github.io/future-mrt-stations/
 
 ```
-npm start     # serves the site at http://localhost:8080
-npm test      # 1693 assertions, no dependencies
+npm start                 # serves the site at http://localhost:8080
+npm test                  # both suites, no dependencies
+npm run research:compare  # offline model-comparison run, no API keys needed
 ```
 
 No build step and no runtime dependencies: open `index.html` through any static
@@ -26,6 +27,7 @@ publishes the site to GitHub Pages (`.github/workflows/pages.yml`).
 - **[UPDATING.md](UPDATING.md)** — keeping the map current: when to check, which sources to search, what to edit when an announcement lands, how to score a forecast.
 - **[docs/analysis-v2.0.md](docs/analysis-v2.0.md)** — the source analysis the whole app renders, vendored so the repo is self-contained. The test suite checks the data against it.
 - **[docs/updates.md](docs/updates.md)** — log of changes absorbed over time.
+- **[research/](research/README.md)** — a model-agnostic harness that re-runs the six components of the research process (source discovery, appraisal, citation attribution, quantitative reasoning, self-correction, forecasting) against any model, scored identically, so the analysis can be reproduced with a different reasoner instead of trusted because of who produced it. Claude is one entry in `research/models.json`; a local Llama or Qwen is another.
 
 ## What the map shows
 

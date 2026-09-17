@@ -1,0 +1,4 @@
+# Run outputs and the response cache: regenerate with `npm run research:compare`.
+# research/example-report.md is committed instead, as a sample of the output.
+research/runs/
+node_modules/

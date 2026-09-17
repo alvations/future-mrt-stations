@@ -1,0 +1,122 @@
+{
+  "//": "Model registry. Edit freely - `id` is what you pass to --models. The open-source entries assume a local Ollama or vLLM; change baseUrl and model to whatever your server actually has, since tags vary by host. Nothing in the harness treats any entry specially.",
+  "models": [
+    {
+      "id": "mock-oracle",
+      "provider": "mock",
+      "model": "oracle",
+      "behaviour": "oracle",
+      "note": "Not a model. Answers from the gold label to prove a perfect score is reachable."
+    },
+    {
+      "id": "mock-weak",
+      "provider": "mock",
+      "model": "weak",
+      "behaviour": "weak",
+      "messy": true,
+      "note": "Not a model. Answers naively, in deliberately messy formatting, to prove a floor score is reachable and keep the JSON-repair path live."
+    },
+
+    {
+      "id": "llama31-8b",
+      "provider": "ollama",
+      "model": "llama3.1:8b",
+      "baseUrl": "http://localhost:11434",
+      "jsonMode": true,
+      "supportsTemperature": true,
+      "supportsSeed": true,
+      "licence": "Llama 3.1 Community",
+      "note": "ollama pull llama3.1:8b"
+    },
+    {
+      "id": "qwen25-32b",
+      "provider": "ollama",
+      "model": "qwen2.5:32b",
+      "baseUrl": "http://localhost:11434",
+      "jsonMode": true,
+      "supportsTemperature": true,
+      "supportsSeed": true,
+      "licence": "Apache-2.0",
+      "note": "ollama pull qwen2.5:32b"
+    },
+    {
+      "id": "mistral-small",
+      "provider": "ollama",
+      "model": "mistral-small",
+      "baseUrl": "http://localhost:11434",
+      "jsonMode": true,
+      "supportsTemperature": true,
+      "supportsSeed": true,
+      "licence": "Apache-2.0"
+    },
+    {
+      "id": "gemma3-27b",
+      "provider": "ollama",
+      "model": "gemma3:27b",
+      "baseUrl": "http://localhost:11434",
+      "jsonMode": true,
+      "supportsTemperature": true,
+      "supportsSeed": true,
+      "licence": "Gemma Terms of Use"
+    },
+    {
+      "id": "deepseek-r1-32b",
+      "provider": "ollama",
+      "model": "deepseek-r1:32b",
+      "baseUrl": "http://localhost:11434",
+      "supportsTemperature": true,
+      "supportsSeed": true,
+      "maxTokens": 8000,
+      "licence": "MIT",
+      "note": "Reasoning model: leave jsonMode off and give it room, it thinks before answering."
+    },
+    {
+      "id": "vllm-local",
+      "provider": "openai-compat",
+      "model": "REPLACE-WITH-SERVED-MODEL-NAME",
+      "baseUrl": "http://localhost:8000",
+      "supportsTemperature": true,
+      "supportsSeed": true,
+      "requireKey": false,
+      "note": "vLLM: python -m vllm.entrypoints.openai.api_server --model <hf-repo>. Also fits llama.cpp --server, TGI and LM Studio."
+    },
+    {
+      "id": "openrouter",
+      "provider": "openai-compat",
+      "model": "REPLACE-WITH-ROUTE",
+      "baseUrl": "https://openrouter.ai/api",
+      "apiKeyEnv": "OPENROUTER_API_KEY",
+      "supportsTemperature": true,
+      "note": "Any hosted OpenAI-compatible gateway works the same way: Together, Groq, Fireworks, DeepInfra."
+    },
+
+    {
+      "id": "claude-opus-5",
+      "provider": "anthropic",
+      "model": "claude-opus-5",
+      "apiKeyEnv": "ANTHROPIC_API_KEY",
+      "supportsTemperature": false,
+      "effort": "high",
+      "maxTokens": 8000,
+      "note": "temperature/top_p/top_k are rejected with a 400 on this family; depth is controlled by effort instead. Thinking is on by default."
+    },
+    {
+      "id": "claude-sonnet-5",
+      "provider": "anthropic",
+      "model": "claude-sonnet-5",
+      "apiKeyEnv": "ANTHROPIC_API_KEY",
+      "supportsTemperature": false,
+      "effort": "high",
+      "maxTokens": 8000
+    },
+    {
+      "id": "claude-haiku-45",
+      "provider": "anthropic",
+      "model": "claude-haiku-4-5",
+      "apiKeyEnv": "ANTHROPIC_API_KEY",
+      "supportsTemperature": true,
+      "maxTokens": 4000,
+      "note": "Haiku 4.5 still accepts temperature, unlike the 5-series."
+    }
+  ]
+}

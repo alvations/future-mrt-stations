@@ -1,0 +1,70 @@
+{
+  "//": "Section 8 of the analysis: claims from v1.0 that verification changed. This is the self-correction step of the research process - the step that produced the most value, because it killed four predictions. Each row gives the claim and the evidence it was checked against; the verdict is what verification actually concluded.",
+  "vocabulary": {
+    "withdrawn": "the claim does not survive - the evidence contradicts its premise",
+    "reframed": "the premise is wrong but something useful survives in a different form",
+    "confirmed": "the evidence supports the claim as stated"
+  },
+  "rows": [
+    {
+      "id": "C01",
+      "claim": "Route the proposed Seletar-Tengah Line through Bukit Timah Turf City, because the 15,000-20,000 homes planned there have no rail.",
+      "evidence": "Cross Island Line Phase 2, due 2032, has this station list: Turf City, King Albert Park, Maju, Clementi, West Coast, Jurong Lake District.",
+      "verdict": "withdrawn"
+    },
+    {
+      "id": "C02",
+      "claim": "Route the proposed Seletar-Tengah Line through Chencharu, because Yishun relies on the North South Line alone.",
+      "evidence": "The Chencharu housing area in Yishun, about 10,000 homes by 2040 on 70 ha, is planned around the existing Khatib North South Line station, which it integrates.",
+      "verdict": "withdrawn"
+    },
+    {
+      "id": "C03",
+      "claim": "The Kranji former racecourse site, about 14,000 homes, needs a new north-west rail link.",
+      "evidence": "The site adjoins the existing Kranji North South Line station, connected by a sheltered walkway, and a new Downtown Line / North South Line interchange at Sungei Kadut opens in 2035.",
+      "verdict": "withdrawn"
+    },
+    {
+      "id": "C04",
+      "claim": "Serangoon North is an unserved area that needs the Seletar Line.",
+      "evidence": "Cross Island Line Phase 1, due 2030, includes a Serangoon North station. The minister also named Serangoon North in the first priority corridor for the Seletar Line study.",
+      "verdict": "reframed"
+    },
+    {
+      "id": "C05",
+      "claim": "Jurong Region Line Stage 1 opening in mid-2028 is unverified and should be treated as low confidence.",
+      "evidence": "LTA's March 2026 factsheet on the next phase of rail development confirms JRL Stage 1 for mid-2028, about six months later than the previous end-2027 target, with manpower added.",
+      "verdict": "confirmed"
+    },
+    {
+      "id": "C06",
+      "claim": "The 150,000 homes planned at Paya Lebar Air Base exceed Tengah and Punggol combined.",
+      "evidence": "Sources on the Paya Lebar Air Base redevelopment compare the site's yield to Sengkang and Punggol combined, on about 800 ha.",
+      "verdict": "reframed"
+    },
+    {
+      "id": "C07",
+      "claim": "There may be a Cross Island Line station at Defu near Paya Lebar Air Base, but this is unverified.",
+      "evidence": "The published Cross Island Line Phase 1 station list includes Defu, between Tampines North and Hougang.",
+      "verdict": "confirmed"
+    },
+    {
+      "id": "C08",
+      "claim": "Tengah is planned for roughly 42,000 homes, but the figure is unsourced.",
+      "evidence": "SG101, a government resource, states that Tengah is planned for about 42,000 homes, roughly three-quarters the size of Punggol.",
+      "verdict": "confirmed"
+    },
+    {
+      "id": "C09",
+      "claim": "The Johor Bahru RTS Link is expected around the end of 2026, but the timing is unsourced.",
+      "evidence": "The RTS Link between Woodlands North and Bukit Chagar, 4 km at 10,000 passengers per hour per direction, has an official end-2026 target; a first train demonstration was completed at Woodlands North in February 2026.",
+      "verdict": "confirmed"
+    },
+    {
+      "id": "C10",
+      "claim": "The industrial west needs a new Jurong Region Line extension towards Tuas.",
+      "evidence": "Cross Island Line Phase 3, construction from 2027 and opening late 2030s, runs west from Jurong Lake District to Gul Circle on the East West Line with a JRL interchange at Jurong Pier, serving Jurong Industrial Estate and Taman Jurong.",
+      "verdict": "withdrawn"
+    }
+  ]
+}

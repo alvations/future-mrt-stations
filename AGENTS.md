@@ -44,7 +44,12 @@ These are not style preferences. Breaking them makes the app misleading.
    outline would be guesswork presented as fact. The land tint is derived from
    the rail routes themselves. Station coordinates are approximate and labelled
    as such in the UI. Do not add a coastline without a real data source.
-5. **Don't silently "fix" the source document.** Where the document is internally
+5. **A model's answer is not evidence.** `research/` can run the research
+   process with any model, but nothing it outputs may be written into the map
+   data without going through UPDATING.md §3: find the primary source, add it to
+   the register, add a finding, then cite it. A harness result is a signal about
+   the model, never a citation.
+6. **Don't silently "fix" the source document.** Where the document is internally
    inconsistent, show computed values and document the discrepancy (see §12).
 
 ## 3. Run and verify
@@ -52,8 +57,11 @@ These are not style preferences. Breaking them makes the app misleading.
 Node 22. No dependencies, no build step.
 
 ```bash
-npm test      # 1693 assertions
-npm start     # serves at http://localhost:8080
+npm test               # both suites: map data, then the research harness
+npm test:app           # map and data only
+npm run test:research  # harness only, no network
+npm start              # serves at http://localhost:8080
+npm run research:compare   # offline model-comparison run, no keys needed
 ```
 
 `npm test` is pure Node and covers the model, every cross-reference, the route
@@ -107,9 +115,12 @@ assets/js/data/predictions.js  22 forecasts P01-P22
 assets/js/geo.js            projection, route smoothing
 assets/js/dgi.js            the index model, shared by browser and tests
 assets/js/app.js            node merging, rendering, declutter, panel, routing
-test/app.test.js            the whole suite, no dependencies
+test/app.test.js            the map and data suite, no dependencies
+test/research.test.js       the harness suite, no network
 docs/analysis-v2.0.md       the source analysis this app renders
 docs/updates.md             log of changes made to the data over time
+research/                   model-agnostic harness for redoing the research
+                            with any model - see research/README.md
 ```
 
 Data files are UMD modules: the same file is a `<script>` in the browser and a
@@ -236,7 +247,19 @@ every branch and PR. The live site is
 https://alvations.github.io/future-mrt-stations/ . The site is path-relative, so
 it works from any base path.
 
-## 12. Decisions and known issues
+## 12. Reproducing the research with another model
+
+`research/` re-runs the six components of the process that produced the analysis
+— source discovery, appraisal, citation attribution, quantitative reasoning,
+self-correction and forecasting — against any model, scored identically. Claude
+is one entry in `research/models.json`; a local Llama or Qwen is another. See
+`research/README.md` to run it and `research/process.md` for the specification.
+
+It exists because a research output that only holds when one particular model
+produces it is worth knowing about. It is tooling, not map data: see ground
+rule 5.
+
+## 13. Decisions and known issues
 
 - **The document's own sensitivity table does not reproduce for Sembawang.** It prints 14.8 and 14.3 at 2.5 and 3.5 residents per home; recomputing from its stated inputs gives 15.5 and 13.8. Its conclusions hold, so the app shows computed values and the tests assert the conclusions rather than those two cells.
 - **Station coordinates are approximate**, entered from knowledge of the network rather than a survey. Line topology and station order are reliable; positions are within a few hundred metres. Replacing them with an authoritative dataset would be a strict improvement — see UPDATING.md §2.

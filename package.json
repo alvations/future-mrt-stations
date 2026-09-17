@@ -1,11 +1,15 @@
 {
   "name": "future-mrt-stations",
   "version": "1.0.0",
-  "description": "Interactive map of Singapore's committed, studied and speculative future MRT lines, with the reasoning and sources behind every station.",
+  "description": "Interactive map of Singapore's committed, studied and speculative future MRT lines, with the reasoning and sources behind every station - plus a model-agnostic harness for reproducing the research that produced it.",
   "private": true,
   "scripts": {
-    "test": "node test/app.test.js",
-    "start": "npx --yes http-server -p 8080 -c-1 ."
+    "test": "node test/app.test.js && node test/research.test.js",
+    "test:app": "node test/app.test.js",
+    "test:research": "node test/research.test.js",
+    "start": "npx --yes http-server -p 8080 -c-1 .",
+    "research:compare": "node research/run.js --models mock-oracle,mock-weak",
+    "research:score": "node research/score.js"
   },
   "license": "MIT"
 }

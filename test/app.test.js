@@ -251,14 +251,27 @@ if (fs.existsSync(docPath)) {
 
 /* ---- 8. Repo hygiene: the things a fresh clone needs to be usable ---- */
 section('A fresh clone has what it needs');
-['LICENSE', 'README.md', 'AGENTS.md', 'UPDATING.md', 'docs/updates.md'].forEach(function (f) {
+['LICENSE', 'README.md', 'AGENTS.md', 'UPDATING.md', 'docs/updates.md',
+ 'research/README.md', 'research/process.md', 'research/models.json',
+ 'research/example-report.md'].forEach(function (f) {
   ok(f + ' exists', fs.existsSync(path.join(__dirname, '..', f)));
 });
 var licence = fs.readFileSync(path.join(__dirname, '..', 'LICENSE'), 'utf8');
 ok('LICENSE is MIT', /^MIT License/.test(licence));
 var pkg = require(path.join(__dirname, '..', 'package.json'));
 ok('package.json agrees the licence is MIT', pkg.license === 'MIT');
-ok('npm test runs this suite', /test\/app\.test\.js/.test(pkg.scripts.test));
+ok('npm test runs the map suite', /test\/app\.test\.js/.test(pkg.scripts.test));
+ok('npm test also runs the harness suite', /test\/research\.test\.js/.test(pkg.scripts.test));
+ok('there is an offline model-comparison script', /run\.js/.test(pkg.scripts['research:compare'] || ''));
+/* The harness must stay hot-pluggable: at least one open-weights backend, one
+   hosted backend, and the offline fixtures, all reachable from the registry. */
+var registry = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'research', 'models.json'), 'utf8')).models;
+var byProvider = {};
+registry.forEach(function (m) { byProvider[m.provider] = (byProvider[m.provider] || 0) + 1; });
+ok('registry offers a self-hosted open-weights path', (byProvider.ollama || 0) + (byProvider['openai-compat'] || 0) >= 2);
+ok('registry offers the mock fixtures for offline runs', (byProvider.mock || 0) === 2);
+ok('registry offers Claude as one option among others', (byProvider.anthropic || 0) >= 1);
+ok('no provider dominates the registry', Object.keys(byProvider).length >= 4);
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
