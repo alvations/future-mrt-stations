@@ -9,13 +9,16 @@ It is built from *Where Singapore's Next MRT Lines Could Go* v2.0 (16 September
 2026) — 79 sources, 64 findings, a reproducible Demand Gap Index, and 22 dated
 probability forecasts.
 
+**Live site:** https://alvations.github.io/future-mrt-stations/
+
 ```
 npm start     # serves the site at http://localhost:8080
 npm test      # 1348 assertions, no dependencies
 ```
 
 No build step and no runtime dependencies: open `index.html` through any static
-server.
+server. Every push to the default branch runs the tests and, if they pass,
+publishes the site to GitHub Pages (`.github/workflows/pages.yml`).
 
 ## What the map shows
 
