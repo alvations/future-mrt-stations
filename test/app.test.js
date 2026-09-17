@@ -189,5 +189,76 @@ ok('PLAB corridor is model class', plab && plab.klass === 'model');
 ok('PLAB interior stations are model-placed',
   plab.stations.filter(function (s) { return /^PLAB-/.test(s.code); }).every(function (s) { return s.placement === 'model'; }));
 
+/* ---- 7. Provenance: the data still matches the vendored source document ----
+   docs/analysis-v2.0.md is the analysis this app renders. If someone edits the
+   data files, these checks catch drift away from what the document actually
+   says. When the document is superseded, update it AND these expectations
+   together - see UPDATING.md. */
+section('Data matches the vendored source document');
+var fs = require('fs');
+var docPath = path.join(__dirname, '..', 'docs', 'analysis-v2.0.md');
+ok('the source document is vendored in the repo', fs.existsSync(docPath));
+if (fs.existsSync(docPath)) {
+  var doc = fs.readFileSync(docPath, 'utf8');
+  ok('document is version 2.0', /\*\*Version:\*\* 2\.0/.test(doc));
+
+  /* Source register: ids, grades and URLs must match exactly. */
+  var docSources = {};
+  doc.split('\n').forEach(function (line) {
+    var m = line.match(/^\|\s*(S\d\d)\s*\|(.+?)\|(.+?)\|(.+?)\|\s*([ABCD])\s*\|\s*(\S+)\s*\|$/);
+    if (m) docSources[m[1]] = { grade: m[5], url: m[6] };
+  });
+  ok('document lists 79 sources', Object.keys(docSources).length === 79, Object.keys(docSources).length);
+  ok('data carries the same number of sources', sources.length === Object.keys(docSources).length);
+  sources.forEach(function (s2) {
+    var d2 = docSources[s2.id];
+    ok('source ' + s2.id + ' is in the document', !!d2);
+    if (d2) {
+      ok('source ' + s2.id + ' grade matches the document', s2.grade === d2.grade, s2.grade + ' vs ' + d2.grade);
+      ok('source ' + s2.id + ' url matches the document', s2.url === d2.url, s2.url + ' vs ' + d2.url);
+    }
+  });
+
+  /* Forecasts: probability and deadline must match. */
+  var docPreds = {};
+  doc.split('\n').forEach(function (line) {
+    var m = line.match(/^\|\s*(P\d\d)\s*\|(.+?)\|\s*(.+?)\s*\|\s*\*\*(\d+)%\*\*\s*\|/);
+    if (m) docPreds[m[1]] = { deadline: m[3], p: Number(m[4]) / 100 };
+  });
+  ok('document lists 22 forecasts', Object.keys(docPreds).length === 22, Object.keys(docPreds).length);
+  predictions.forEach(function (p2) {
+    var d2 = docPreds[p2.id];
+    ok('forecast ' + p2.id + ' is in the document', !!d2);
+    if (d2) {
+      ok('forecast ' + p2.id + ' probability matches', Math.abs(p2.p - d2.p) < 1e-9, p2.p + ' vs ' + d2.p);
+      ok('forecast ' + p2.id + ' deadline matches', p2.deadline === d2.deadline, p2.deadline + ' vs ' + d2.deadline);
+    }
+  });
+
+  /* Demand Gap Index: the published total at each rank must be what we compute. */
+  var docScores = {};
+  doc.split('\n').forEach(function (line) {
+    var m = line.match(/^\|\s*(\d{1,2})\s*\|\s*\*{0,2}(.+?)\*{0,2}\s*\|.*\|\s*\*{0,2}([\d.]+)\*{0,2}\s*\|\s*[A-Z].*\|$/);
+    if (m && Number(m[1]) >= 1 && Number(m[1]) <= 14) docScores[Number(m[1])] = Number(m[3]);
+  });
+  ok('document lists all 14 ranked areas', Object.keys(docScores).length === 14, Object.keys(docScores).length);
+  areas.forEach(function (a) {
+    var want = docScores[a.rank];
+    ok('area ' + a.id + ' claims a rank the document has', want !== undefined);
+    if (want !== undefined) near('rank ' + a.rank + ' (' + a.id + ') matches the document', dgi.score(a).total, want);
+  });
+}
+
+/* ---- 8. Repo hygiene: the things a fresh clone needs to be usable ---- */
+section('A fresh clone has what it needs');
+['LICENSE', 'README.md', 'AGENTS.md', 'UPDATING.md', 'docs/updates.md'].forEach(function (f) {
+  ok(f + ' exists', fs.existsSync(path.join(__dirname, '..', f)));
+});
+var licence = fs.readFileSync(path.join(__dirname, '..', 'LICENSE'), 'utf8');
+ok('LICENSE is MIT', /^MIT License/.test(licence));
+var pkg = require(path.join(__dirname, '..', 'package.json'));
+ok('package.json agrees the licence is MIT', pkg.license === 'MIT');
+ok('npm test runs this suite', /test\/app\.test\.js/.test(pkg.scripts.test));
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

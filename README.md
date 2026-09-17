@@ -13,12 +13,19 @@ probability forecasts.
 
 ```
 npm start     # serves the site at http://localhost:8080
-npm test      # 1348 assertions, no dependencies
+npm test      # 1693 assertions, no dependencies
 ```
 
 No build step and no runtime dependencies: open `index.html` through any static
 server. Every push to the default branch runs the tests and, if they pass,
 publishes the site to GitHub Pages (`.github/workflows/pages.yml`).
+
+**Working on this repo?**
+
+- **[AGENTS.md](AGENTS.md)** — everything an agent or contributor needs from a fresh clone: ground rules, data model, rendering internals, how to verify.
+- **[UPDATING.md](UPDATING.md)** — keeping the map current: when to check, which sources to search, what to edit when an announcement lands, how to score a forecast.
+- **[docs/analysis-v2.0.md](docs/analysis-v2.0.md)** — the source analysis the whole app renders, vendored so the repo is self-contained. The test suite checks the data against it.
+- **[docs/updates.md](docs/updates.md)** — log of changes absorbed over time.
 
 ## What the map shows
 
@@ -95,4 +102,14 @@ map, the panel, the search index and the tests pick it up automatically.
   basemap can never claim more than the station data supports.
 - **Probabilities are subjective** and unscored. When a deadline passes, score
   the set with the Brier score: the mean of (probability − outcome)², where 0.25
-  is what always guessing 50% would get.
+  is what always guessing 50% would get. [UPDATING.md](UPDATING.md) §5 says how
+  to record an outcome without editing the original probability away.
+
+## Licence
+
+Code and data files: [MIT](LICENSE).
+
+`docs/analysis-v2.0.md` is the source analysis this app renders, reproduced so
+the repo is self-contained and its claims are checkable. Its findings cite 79
+third-party sources, each linked and graded in the app; those sources remain the
+property of their publishers.
