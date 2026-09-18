@@ -13,7 +13,10 @@ general:
   contact_url: false
 
 server:
-  secret_key: "change-me-for-anything-but-local-use"
+  # This file is mounted read-only, so the image cannot substitute SEARXNG_SECRET
+  # into it. Edit the value here if this instance is ever reachable by anyone
+  # else; as shipped it binds to 127.0.0.1 and serves a single local user.
+  secret_key: "local-only-not-a-shared-instance"
   limiter: false          # no rate limiting: this instance is local and single-user
   image_proxy: false
 

@@ -35,9 +35,10 @@ services:
     volumes:
       - ./docker/searxng:/etc/searxng:ro
     environment:
-      # Override in a .env file or your shell for anything beyond local use.
-      - SEARXNG_SECRET=${SEARXNG_SECRET:-change-me-for-anything-but-local-use}
       - SEARXNG_BASE_URL=http://localhost:8888/
+      # No SEARXNG_SECRET here on purpose: settings.yml is mounted read-only and
+      # sets secret_key itself, so the image's entrypoint cannot substitute an
+      # env var into it. To change the secret, edit docker/searxng/settings.yml.
     restart: unless-stopped
 
 volumes:

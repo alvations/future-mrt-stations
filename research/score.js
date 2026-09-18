@@ -54,7 +54,12 @@ function report(runIdArg) {
   L.push('');
   L.push('- **Search backend:** `' + meta.search + '`' + (meta.search === 'fixtures' ? ' (offline, closed corpus of the report’s 79 sources - reproducible)' : ' (live web - results move between runs)'));
   L.push('- **Settings:** temperature ' + meta.settings.temperature + ', seed ' + meta.settings.seed +
-    ', repeats ' + meta.settings.repeats + (meta.settings.limit ? ', limit ' + meta.settings.limit + ' items/task' : '') + ', node ' + meta.node);
+    ', repeats ' + meta.settings.repeats + (meta.settings.limit ? ', limit ' + meta.settings.limit + ' items/task' : ''));
+  if (meta.dataset) {
+    L.push('- **Corpus:** `' + meta.dataset.root + '` (resolved via ' + meta.dataset.resolvedVia + ') - ' +
+      Object.keys(meta.dataset.counts).map(function (k) { return meta.dataset.counts[k] + ' ' + k; }).join(', '));
+  }
+  L.push('- **Harness:** v' + (meta.harness || 'unknown') + ', node ' + meta.node);
   L.push('- **Started:** ' + meta.started);
   L.push('');
 

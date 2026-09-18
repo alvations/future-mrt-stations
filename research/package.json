@@ -2,12 +2,22 @@
   "name": "mrt-research-harness",
   "version": "1.0.0",
   "description": "Model-agnostic harness for reproducing a research process across models: source discovery, appraisal, citation attribution, quantitative reasoning, self-correction and calibrated forecasting, scored identically for every model.",
-  "keywords": ["llm", "evaluation", "benchmark", "ollama", "vllm", "open-weights", "reproducible-research"],
+  "keywords": [
+    "llm",
+    "evaluation",
+    "benchmark",
+    "ollama",
+    "vllm",
+    "open-weights",
+    "reproducible-research"
+  ],
   "license": "MIT",
   "private": true,
   "//": "private until someone decides to publish it: pick a scope you own, drop this field, and check the `files` list. The harness is usable from a clone or a workspace link without publishing.",
   "type": "commonjs",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "main": "index.js",
   "exports": {
     ".": "./index.js",
@@ -19,16 +29,30 @@
     "./json": "./lib/json.js",
     "./package.json": "./package.json"
   },
-  "bin": { "mrt-research": "./run.js" },
+  "bin": {
+    "mrt-research": "./run.js"
+  },
   "files": [
-    "index.js", "run.js", "score.js", "models.json",
-    "lib/", "providers/", "tasks/", "search/", "prompts/", "fixtures/",
-    "README.md", "process.md", "example-report.md"
+    "index.js",
+    "run.js",
+    "score.js",
+    "models.json",
+    "lib/",
+    "providers/",
+    "tasks/",
+    "search/",
+    "prompts/",
+    "fixtures/",
+    "docker-compose.yml",
+    "docker/",
+    "README.md",
+    "process.md",
+    "example-report.md"
   ],
   "scripts": {
     "compare": "node run.js --models mock-oracle,mock-weak",
     "score": "node score.js",
-    "test": "node ../test/research.test.js"
+    "//": "The test suite lives with the repo that owns the corpus, not in this package: run `npm run test:research` from the repo root."
   },
   "dependencies": {}
 }

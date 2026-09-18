@@ -351,8 +351,15 @@ section('Provider adapters send the right request');
   pkg.files.forEach(function (f) {
     ok('files entry "' + f + '" exists', fs.existsSync(path.join(R, f.replace(/\/$/, ''))));
   });
-  ['index.js', 'run.js', 'score.js', 'models.json', 'lib/', 'providers/', 'tasks/', 'search/', 'prompts/', 'fixtures/'].forEach(function (needed) {
+  ['index.js', 'run.js', 'score.js', 'models.json', 'lib/', 'providers/', 'tasks/', 'search/',
+   'prompts/', 'fixtures/', 'docker-compose.yml', 'docker/'].forEach(function (needed) {
     ok('files list ships ' + needed, pkg.files.indexOf(needed) >= 0);
+  });
+  /* A script that reaches outside the package root cannot run in an installed
+     copy, so the package must not advertise one. */
+  Object.keys(pkg.scripts || {}).forEach(function (name) {
+    if (name === '//') return;
+    ok('script "' + name + '" stays inside the package', pkg.scripts[name].indexOf('..') < 0, pkg.scripts[name]);
   });
 
   var binPath = path.join(R, pkg.bin['mrt-research']);
@@ -373,8 +380,18 @@ section('Provider adapters send the right request');
   var dataset = require(path.join(R, 'lib', 'dataset.js'));
   var d = dataset.describe();
   ok('dataset resolves', !!d.root && !!d.resolvedVia);
-  ok('dataset counts match the shipped data', d.counts.sources === 79 && d.counts.findings === 64 &&
-    d.counts.areas === 14 && d.counts.predictions === 22, JSON.stringify(d.counts));
+  /* Cleared env, so this asserts the repo corpus even when the developer has
+     MRT_DATA_ROOT exported for another one. */
+  var cleanEnv = Object.assign({}, process.env);
+  delete cleanEnv.MRT_DATA_ROOT;
+  var repoCounts = JSON.parse(cp.execFileSync(process.execPath, ['-e',
+    'console.log(JSON.stringify(require(process.argv[1]).describe()))', path.join(R, 'lib', 'dataset.js')],
+    { env: cleanEnv, encoding: 'utf8' }));
+  ok('the repo corpus has the expected counts', repoCounts.counts.sources === 79 && repoCounts.counts.findings === 64 &&
+    repoCounts.counts.areas === 14 && repoCounts.counts.predictions === 22, JSON.stringify(repoCounts.counts));
+  ok('the repo corpus resolves via the checkout', repoCounts.resolvedVia === 'repo', repoCounts.resolvedVia);
+  ok('whatever corpus is in use reports self-consistent counts',
+    d.counts.sources === dataset.sources.length && d.counts.findings === dataset.findings.length);
   ok('dataset exposes every module the tasks need',
     ['sources', 'findings', 'areas', 'predictions', 'dgi'].every(function (k) { return !!dataset.load(k); }));
   ok('unknown dataset module is rejected', (function () {
@@ -390,7 +407,9 @@ section('Provider adapters send the right request');
       if (e.isDirectory()) { if (e.name !== 'runs' && e.name !== 'node_modules') walk(full); return; }
       if (!/\.js$/.test(e.name)) return;
       if (full === path.join(R, 'lib', 'dataset.js')) return;   /* the one sanctioned seam */
-      if (/'assets'|\.\.\/\.\.\/assets/.test(fs.readFileSync(full, 'utf8'))) reachArounds.push(path.relative(R, full));
+      /* Quote style must not be a loophole: match 'assets', "assets" and a
+         literal ../../assets alike. */
+      if (/['"]assets['"]|\.\.\/\.\.\/assets/.test(fs.readFileSync(full, 'utf8'))) reachArounds.push(path.relative(R, full));
     });
   })(R);
   ok('only lib/dataset.js knows where the data lives', reachArounds.length === 0, reachArounds.join(', '));
@@ -410,16 +429,76 @@ section('Provider adapters send the right request');
   } catch (e) { failed = String(e.stderr || ''); }
   ok('a bogus MRT_DATA_ROOT still falls back to the repo', failed === '', failed.slice(0, 120));
 
+  /* The no-corpus path needs the resolver to live OUTSIDE the repo, because its
+     last fallback is __dirname-relative. Copy the module to a temp directory
+     and check the error actually explains itself. */
+  var tmpSeam = fs.mkdtempSync(path.join(require('os').tmpdir(), 'mrt-seam-'));
   var noData = '';
   try {
+    fs.mkdirSync(path.join(tmpSeam, 'lib'));
+    fs.copyFileSync(path.join(R, 'lib', 'dataset.js'), path.join(tmpSeam, 'lib', 'dataset.js'));
+    try {
+      cp.execFileSync(process.execPath, ['-e', 'require(process.argv[1]).describe()',
+        path.join(tmpSeam, 'lib', 'dataset.js')], { encoding: 'utf8', stdio: 'pipe' });
+    } catch (e) { noData = String(e.stderr || ''); }
+    ok('a missing corpus raises rather than resolving to nothing', !!noData);
+    ok('the error says what is missing', /No dataset found/.test(noData), noData.slice(0, 120));
+    ok('the error lists where it looked', /Looked in:/.test(noData));
+    ok('the error names the files a corpus needs', /js\/data\/sources\.js/.test(noData));
+    ok('the error names the way out', /MRT_DATA_ROOT/.test(noData));
+  } finally {
+    fs.rmSync(tmpSeam, { recursive: true, force: true });
+  }
+
+  /* An optional module absent from a corpus must explain itself too. */
+  var optErr = '';
+  try {
     cp.execFileSync(process.execPath, ['-e',
-      'require(process.argv[1]).describe()', path.join(R, 'lib', 'dataset.js')],
-      { cwd: '/tmp', env: Object.assign({}, process.env, { MRT_DATA_ROOT: '/nonexistent' }), encoding: 'utf8', stdio: 'pipe' });
-  } catch (e) { noData = String(e.stderr || ''); }
-  /* Inside the repo the fallback always succeeds, so this only asserts the
-     error text exists for the case where it cannot. */
-  ok('the resolver documents its search path in code',
-    /Looked in:/.test(fs.readFileSync(path.join(R, 'lib', 'dataset.js'), 'utf8')));
+      'require(process.argv[1]).load("network")', path.join(R, 'lib', 'dataset.js')],
+      { env: Object.assign({}, cleanEnv, { MRT_DATA_ROOT: tmpSeam }), encoding: 'utf8', stdio: 'pipe' });
+  } catch (e) { optErr = String(e.stderr || ''); }
+  ok('an absent optional module gives a real message, not MODULE_NOT_FOUND',
+    !/Cannot find module/.test(optErr), optErr.slice(0, 120));
+
+  /* A packaged copy, away from any corpus, must still load and answer --help.
+     Reading the dataset at import time broke both, and nothing caught it. */
+  var tmpPkg = fs.mkdtempSync(path.join(require('os').tmpdir(), 'mrt-pkg-'));
+  try {
+    fs.cpSync(R, path.join(tmpPkg, 'harness'), {
+      recursive: true,
+      filter: function (src) { return path.basename(src) !== 'runs' && path.basename(src) !== 'node_modules'; }
+    });
+    var pkgDir = path.join(tmpPkg, 'harness');
+    var envNoCorpus = Object.assign({}, process.env);
+    delete envNoCorpus.MRT_DATA_ROOT;
+
+    var helpOut = cp.execFileSync(process.execPath, [path.join(pkgDir, 'run.js'), '--help'],
+      { env: envNoCorpus, encoding: 'utf8', stdio: 'pipe' });
+    ok('--help works with no corpus present', /--models/.test(helpOut), helpOut.slice(0, 80));
+
+    var libOut = cp.execFileSync(process.execPath, ['-e',
+      'var h = require(process.argv[1]); console.log(h.version + " " + h.tasks.DEFAULT_ORDER.length)',
+      path.join(pkgDir, 'index.js')], { env: envNoCorpus, encoding: 'utf8', stdio: 'pipe' });
+    ok('the package imports with no corpus present', libOut.trim() === pkg.version + ' 6', libOut.trim());
+
+    /* And asking it to actually work without one must explain itself. */
+    var runErr = '';
+    try {
+      cp.execFileSync(process.execPath, [path.join(pkgDir, 'run.js'), '--models', 'mock-oracle', '--tasks', 'score-dgi'],
+        { env: envNoCorpus, encoding: 'utf8', stdio: 'pipe' });
+    } catch (e) { runErr = String(e.stderr || ''); }
+    ok('running without a corpus explains the problem', /No dataset found/.test(runErr), runErr.slice(0, 100));
+
+    /* Pointed at this repo's corpus, the detached copy runs. */
+    var extOut = cp.execFileSync(process.execPath, [path.join(pkgDir, 'run.js'),
+      '--models', 'mock-oracle', '--tasks', 'score-dgi', '--limit', '2', '--out', 'exttest', '--json'],
+      { env: Object.assign({}, envNoCorpus, { MRT_DATA_ROOT: path.join(__dirname, '..', 'assets') }), encoding: 'utf8', stdio: 'pipe' });
+    var extJson = JSON.parse(extOut);
+    ok('a detached copy runs against an external corpus', extJson.results[0].headline.value === 1);
+    ok('--json still writes a report and says where', !!extJson.report && fs.existsSync(extJson.report));
+  } finally {
+    fs.rmSync(tmpPkg, { recursive: true, force: true });
+  }
 
   /* ---- 10. Programmatic API end to end ---- */
   section('Programmatic API');
@@ -442,6 +521,9 @@ section('Provider adapters send the right request');
     ok('oracle still scores perfectly through the API', oracleEntry.headline.value === 1);
     var reportPath = api.scoreRun(apiRun.runId);
     ok('scoreRun writes a report', fs.existsSync(reportPath));
+    var reportText = fs.readFileSync(reportPath, 'utf8');
+    ok('the report names the corpus it was scored against', /\*\*Corpus:\*\*/.test(reportText));
+    ok('the report names the harness version', new RegExp('v' + pkg.version.replace(/\./g, '\\.')).test(reportText));
   } finally {
     fs.rmSync(apiRun.dir, { recursive: true, force: true });
   }

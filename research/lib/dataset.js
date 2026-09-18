@@ -67,7 +67,20 @@ function root() {
 var cache = {};
 function load(id) {
   if (!FILES[id]) throw new Error('unknown dataset module "' + id + '" (have: ' + Object.keys(FILES).join(', ') + ')');
-  if (!cache[id]) cache[id] = require(path.join(root().dir, FILES[id]));
+  if (!cache[id]) {
+    var file = path.join(root().dir, FILES[id]);
+    /* network and future are not in REQUIRED - the six tasks do not need them,
+       so an external corpus need not supply them. Asking for one that is
+       absent must say so, rather than surfacing a bare MODULE_NOT_FOUND. */
+    if (!fs.existsSync(file)) {
+      throw new Error('dataset module "' + id + '" is not in this corpus.\n' +
+        '  expected: ' + file + '\n' +
+        (REQUIRED.indexOf(id) < 0
+          ? '  (optional: the six tasks do not need it, but something asked for it)'
+          : '  (required by the tasks)'));
+    }
+    cache[id] = require(file);
+  }
   return cache[id];
 }
 

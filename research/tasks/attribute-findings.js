@@ -7,14 +7,24 @@ var prompt = require('../lib/prompt.js');
 var J = require('../lib/json.js');
 var M = require('../lib/metrics.js');
 var dataset = require('../lib/dataset.js');
-var findings = dataset.findings;
-var sources = dataset.sources;
 
-var REGISTER = sources.map(function (s) {
-  return '- ' + s.id + ' (grade ' + s.grade + '): ' + s.title + ' - ' + s.publisher + ', ' + s.date;
-}).join('\n');
-var VALID = {};
-sources.forEach(function (s) { VALID[s.id] = true; });
+/* Built on first use, not at import time, so the package loads without a
+   corpus present. */
+var memo = null;
+function corpus() {
+  if (memo) return memo;
+  var sources = dataset.sources;
+  var valid = {};
+  sources.forEach(function (s) { valid[s.id] = true; });
+  memo = {
+    findings: dataset.findings,
+    register: sources.map(function (s) {
+      return '- ' + s.id + ' (grade ' + s.grade + '): ' + s.title + ' - ' + s.publisher + ', ' + s.date;
+    }).join('\n'),
+    valid: valid
+  };
+  return memo;
+}
 
 module.exports = {
   id: 'attribute-findings',
@@ -23,10 +33,11 @@ module.exports = {
   maxTokens: 400,
 
   items: function () {
-    return findings.map(function (f) {
+    var c = corpus();
+    return c.findings.map(function (f) {
       return {
         id: f.id,
-        input: { text: f.text, section: f.section, register: REGISTER },
+        input: { text: f.text, section: f.section, register: c.register },
         gold: { sources: f.sources }
       };
     });
@@ -44,7 +55,7 @@ module.exports = {
       var s = typeof x === 'string' ? x : (x && (x.id || x.source));
       var m = String(s || '').toUpperCase().match(/S\d{1,2}/);
       return m ? 'S' + String(m[0].slice(1)).padStart(2, '0') : null;
-    }).filter(function (x) { return x && VALID[x]; });
+    }).filter(function (x) { return x && corpus().valid[x]; });
     return { ok: true, value: { sources: Array.from(new Set(ids)) }, repaired: r.repaired, error: null };
   },
 

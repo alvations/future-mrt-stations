@@ -5,7 +5,7 @@
 var prompt = require('../lib/prompt.js');
 var J = require('../lib/json.js');
 var M = require('../lib/metrics.js');
-var sources = require('../lib/dataset.js').sources;
+var dataset = require('../lib/dataset.js');
 
 module.exports = {
   id: 'grade-sources',
@@ -13,8 +13,10 @@ module.exports = {
   measures: 'Can the model apply a provenance rubric the way the report did?',
   maxTokens: 200,
 
+  /* The corpus is read here, not at import time: the package must load, and
+     --help must work, without a dataset present. */
   items: function () {
-    return sources.map(function (s) {
+    return dataset.sources.map(function (s) {
       return {
         id: s.id,
         input: { title: s.title, publisher: s.publisher, date: s.date, url: s.url },

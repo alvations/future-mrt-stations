@@ -100,6 +100,10 @@ console.log(scoreRun(runId));       // path to the generated report.md
 Subpath exports for the pluggable pieces: `mrt-research-harness/providers`,
 `/tasks`, `/search`, `/dataset`, `/metrics`, `/json`.
 
+The package imports without a corpus present — `--help` and `require()` work
+anywhere, and the corpus is resolved only when a task actually needs it, so a
+missing one produces an explanation rather than a stack trace.
+
 ## Point it at a different corpus
 
 The tasks are about a research *process*, not about Singapore. Everything the
@@ -207,11 +211,13 @@ respectable on accuracy alone.
 
 ## Tests
 
+The suite lives with the repo that owns the corpus, not inside the package:
+
 ```bash
-npm run test:research
+npm run test:research      # from the repo root
 ```
 
-254 assertions, no network: provider adapters are verified against a stubbed
+355 assertions, no network: provider adapters are verified against a stubbed
 fetch (including that `temperature` is omitted for the models that reject it and
 sent for the ones that accept it), the tolerant JSON repair path, every metric,
 every task's shape, search determinism, that garbage never scores as correct,

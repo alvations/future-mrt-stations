@@ -11,12 +11,9 @@ var prompt = require('../lib/prompt.js');
 var J = require('../lib/json.js');
 var M = require('../lib/metrics.js');
 var dataset = require('../lib/dataset.js');
-var areas = dataset.areas;
-var dgi = dataset.dgi;
-
-var RESIDENTS_PER_HOME = dgi.DEFAULTS.residentsPerHome;
 
 function describeComponents(area) {
+  var RESIDENTS_PER_HOME = dataset.dgi.DEFAULTS.residentsPerHome;
   return area.components.map(function (c, i) {
     var H;
     if (c.kind === 'population') {
@@ -38,8 +35,10 @@ module.exports = {
   measures: 'Can the model compute the index correctly, and rank the areas correctly?',
   maxTokens: 800,
 
+  /* Corpus read here, not at import time. */
   items: function () {
-    return areas.map(function (a) {
+    var dgi = dataset.dgi;
+    return dataset.areas.map(function (a) {
       return {
         id: a.id,
         input: { name: a.name, components: describeComponents(a) },

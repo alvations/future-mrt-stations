@@ -15,12 +15,18 @@ var prompt = require('../lib/prompt.js');
 var J = require('../lib/json.js');
 var M = require('../lib/metrics.js');
 var dataset = require('../lib/dataset.js');
-var predictions = dataset.predictions;
-var findings = dataset.findings;
-
-var FIND = {};
-findings.forEach(function (f) { FIND[f.id] = f; });
 var TODAY = process.env.RESEARCH_TODAY || '17 September 2026';
+
+/* Resolved on first use, not at import time. */
+var memo = null;
+function corpus() {
+  if (!memo) {
+    var byId = {};
+    dataset.findings.forEach(function (f) { byId[f.id] = f; });
+    memo = { predictions: dataset.predictions, findingsById: byId };
+  }
+  return memo;
+}
 
 module.exports = {
   id: 'forecast',
@@ -29,9 +35,10 @@ module.exports = {
   maxTokens: 400,
 
   items: function () {
-    return predictions.map(function (p) {
+    var c = corpus();
+    return c.predictions.map(function (p) {
       var context = p.f.map(function (id) {
-        return FIND[id] ? '- ' + FIND[id].text : null;
+        return c.findingsById[id] ? '- ' + c.findingsById[id].text : null;
       }).filter(Boolean).join('\n');
       return {
         id: p.id,

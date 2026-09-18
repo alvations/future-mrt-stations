@@ -13,12 +13,18 @@ var prompt = require('../lib/prompt.js');
 var J = require('../lib/json.js');
 var M = require('../lib/metrics.js');
 var dataset = require('../lib/dataset.js');
-var findings = dataset.findings;
-var sources = dataset.sources;
-
-var SRC = {};
-sources.forEach(function (s) { SRC[s.id] = s; });
 var K = Number(process.env.RESEARCH_TOPK || 5);
+
+/* Resolved on first use, not at import time. */
+var memo = null;
+function corpus() {
+  if (!memo) {
+    var byId = {};
+    dataset.sources.forEach(function (s) { byId[s.id] = s; });
+    memo = { findings: dataset.findings, byId: byId };
+  }
+  return memo;
+}
 
 module.exports = {
   id: 'find-sources',
@@ -28,8 +34,9 @@ module.exports = {
   needsSearch: true,
 
   items: function () {
-    return findings.filter(function (f) { return SRC[f.sources[0]]; }).map(function (f) {
-      var target = SRC[f.sources[0]];
+    var c = corpus();
+    return c.findings.filter(function (f) { return c.byId[f.sources[0]]; }).map(function (f) {
+      var target = c.byId[f.sources[0]];
       return {
         id: f.id,
         input: { text: f.text },

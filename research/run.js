@@ -19,7 +19,8 @@
      --registry     path to an alternative models.json
      --no-cache     ignore the response cache
      --out      run id (default: timestamp)
-     --json     print the summary as JSON instead of a table
+     --json     print the summary as JSON instead of a table (report.md is
+                still written; its path is in the JSON)
 
    Every model sees identical prompts, parsing and scoring; raw responses are
    written verbatim so any number here can be audited. */
@@ -27,6 +28,7 @@
 var path = require('path');
 var runner = require('./lib/runner.js');
 var scorer = require('./score.js');
+var store = require('./lib/store.js');
 
 function parseArgs(argv) {
   var flags = {};
@@ -71,7 +73,9 @@ async function main() {
     seed: num(flags.seed, 7),
     concurrency: num(flags.concurrency, 4),
     cache: flags.cache !== false,
-    runId: (flags.out && flags.out !== true) ? String(flags.out) : null,
+    /* Resolved here rather than inside the runner so the banner can print the
+       real id: an interrupted run still leaves something to pass to score.js. */
+    runId: (flags.out && flags.out !== true) ? String(flags.out) : store.runId(),
     registry: (flags.registry && flags.registry !== true) ? String(flags.registry) : null,
     onProgress: quiet ? null : function (entry) {
       var h = entry.headline.value;
@@ -83,17 +87,19 @@ async function main() {
   };
 
   if (!quiet) {
-    console.log('run ' + (opts.runId || '(timestamp)') + '  models=' + models.join(',') +
+    console.log('run ' + opts.runId + '  models=' + models.join(',') +
       '  tasks=' + (opts.tasks ? opts.tasks.join(',') : 'all') + '  search=' + opts.search);
   }
 
   var out = await runner.runComparison(opts);
+  var report = scorer.report(out.runId);
 
   if (quiet) {
-    console.log(JSON.stringify(out.summary, null, 2));
+    /* The report is still written; its path travels in the JSON so a caller
+       does not have to guess where the run landed. */
+    console.log(JSON.stringify(Object.assign({ report: report }, out.summary), null, 2));
     return;
   }
-  var report = scorer.report(out.runId);
   console.log('\nwrote ' + path.relative(process.cwd(), report));
 }
 

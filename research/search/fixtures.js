@@ -10,31 +10,39 @@
    to be a good search engine - it is meant to be the SAME search engine for
    every model. */
 'use strict';
-var sources = require('../lib/dataset.js').sources;
+var dataset = require('../lib/dataset.js');
 
 function tokenise(s) {
   return String(s || '').toLowerCase().split(/[^a-z0-9]+/).filter(function (t) { return t.length > 2; });
 }
 
-var DOCS = sources.map(function (s) {
-  return {
-    id: s.id,
-    url: s.url,
-    title: s.title,
-    publisher: s.publisher,
-    date: s.date,
-    grade: s.grade,
-    tokens: tokenise(s.title + ' ' + s.publisher + ' ' + s.date)
-  };
-});
-
-var DF = {};
-DOCS.forEach(function (d) {
-  Array.from(new Set(d.tokens)).forEach(function (t) { DF[t] = (DF[t] || 0) + 1; });
-});
-var N = DOCS.length;
+/* The index is built on first search, not at import time, so requiring the
+   package does not demand a corpus. */
+var memo = null;
+function index() {
+  if (memo) return memo;
+  var docs = dataset.sources.map(function (s) {
+    return {
+      id: s.id,
+      url: s.url,
+      title: s.title,
+      publisher: s.publisher,
+      date: s.date,
+      grade: s.grade,
+      tokens: tokenise(s.title + ' ' + s.publisher + ' ' + s.date)
+    };
+  });
+  var df = {};
+  docs.forEach(function (d) {
+    Array.from(new Set(d.tokens)).forEach(function (t) { df[t] = (df[t] || 0) + 1; });
+  });
+  memo = { docs: docs, df: df, n: docs.length };
+  return memo;
+}
 
 async function search(query, opts) {
+  var idx = index();
+  var DOCS = idx.docs, DF = idx.df, N = idx.n;
   var k = (opts && opts.k) || 5;
   var q = tokenise(query);
   var scored = DOCS.map(function (d) {
@@ -55,4 +63,9 @@ async function search(query, opts) {
   });
 }
 
-module.exports = { search, id: 'fixtures', size: DOCS.length };
+module.exports = {
+  search: search,
+  id: 'fixtures',
+  /* A getter, so reading `size` is what triggers corpus resolution. */
+  get size() { return index().n; }
+};
