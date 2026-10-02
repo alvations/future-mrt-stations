@@ -65,9 +65,23 @@ npm run research:compare   # offline model-comparison run, no keys needed
 ```
 
 `npm test` is pure Node and covers the model, every cross-reference, the route
-geometry, and provenance against the vendored document. It does **not** open a
-browser, so after any change to `app.js`, `geo.js`, the CSS or `index.html`,
-also run the browser check:
+geometry, and provenance against the vendored document. The browser check is a
+separate suite, because it needs Playwright:
+
+```bash
+npm i --no-save playwright && npx playwright install chromium
+npm run test:render
+```
+
+It serves the site itself and asserts what only eyes used to catch: no console
+errors, every record in the data reaching the screen, **no two visible labels
+overlapping** at either zoom level, station dots and demand bubbles holding
+their screen size across zoom, the panel still explaining a station, layer
+toggles, a phone viewport with no horizontal scroll, and 7:1 body contrast in
+both themes. It skips cleanly when Playwright is absent, so `npm test` stays
+dependency-free. CI runs it as its own job and the deploy is gated on it.
+
+For anything it does not cover, drive the page by hand:
 
 ```bash
 npx --yes http-server -p 8099 -s . &
@@ -95,11 +109,9 @@ const { chromium } = require('playwright');   // or /opt/node22/lib/node_modules
 EOF
 ```
 
-Check the screenshot, not just the counts. Things that only show up visually:
-label collisions, symbols scaling wrongly with zoom, the silhouette breaking up.
-Test at 1440×900 **and** 390×844, in light and dark (`colorScheme` in
-`newPage`), and zoom in four steps to confirm labels declutter rather than pile
-up.
+Look at the screenshot. The render suite covers label collisions, symbol
+scaling and contrast, but nothing automated will tell you the map has stopped
+looking like Singapore.
 
 ## 4. Layout
 

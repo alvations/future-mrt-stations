@@ -5,6 +5,7 @@ on:
   pull_request:
 jobs:
   test:
+    name: Data and harness suites
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -12,3 +13,17 @@ jobs:
         with:
           node-version: '22'
       - run: npm test
+
+  render:
+    name: Rendering smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # Installed here rather than added to package.json: the data and harness
+      # suites stay dependency-free, and only this job needs a browser.
+      - run: npm i --no-save playwright
+      - run: npx playwright install --with-deps chromium
+      - run: node test/render.test.js

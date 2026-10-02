@@ -12,7 +12,8 @@
     "test:research": "node test/research.test.js",
     "start": "npx --yes http-server -p 8080 -c-1 .",
     "research:compare": "node research/run.js --models mock-oracle,mock-weak",
-    "research:score": "node research/score.js"
+    "research:score": "node research/score.js",
+    "test:render": "node test/render.test.js"
   },
   "license": "MIT"
 }

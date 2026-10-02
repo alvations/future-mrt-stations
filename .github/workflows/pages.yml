@@ -27,6 +27,13 @@ jobs:
       # The site is static, but never publish a build whose data fails its checks.
       - name: Run tests
         run: npm test
+      # The node suites never open a browser. Publishing a page whose labels
+      # collapse or whose script throws would pass them all, so the browser
+      # check gates the deploy as well.
+      - name: Install a browser for the rendering check
+        run: npm i --no-save playwright && npx playwright install --with-deps chromium
+      - name: Rendering smoke test
+        run: node test/render.test.js
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
