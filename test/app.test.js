@@ -4,6 +4,7 @@
    3. every route the map draws has coordinates for all of its stations
    4. the geometry stays inside Singapore */
 var path = require('path');
+var fsMod = require('fs');
 function load(p) { return require(path.join(__dirname, '..', p)); }
 
 var sources = load('assets/js/data/sources.js');
@@ -93,6 +94,16 @@ near('PLAB with access gap 0.5', dgi.score(plabOpen).total, 75.0);
 section('Cross-references resolve');
 findings.forEach(function (f) {
   f.sources.forEach(function (s) { ok('finding ' + f.id + ' cites known source ' + s, !!SRC[s]); });
+  /* Every finding must rest on something checkable: cited sources, or a named
+     tool in this repo that reproduces it. A computation dressed up as a
+     citation would be worse than saying plainly that we worked it out. */
+  ok('finding ' + f.id + ' rests on sources or a named method',
+    f.sources.length > 0 || f.method === 'computed');
+  if (f.method === 'computed') {
+    ok('finding ' + f.id + ' names a tool that exists', !!f.tool &&
+      fsMod.existsSync(path.join(__dirname, '..', f.tool)), f.tool);
+    ok('finding ' + f.id + ' cites no source, being a computation', f.sources.length === 0);
+  }
 });
 predictions.forEach(function (p) {
   p.f.forEach(function (f) { ok('prediction ' + p.id + ' cites known finding ' + f, !!FIND[f]); });
@@ -272,6 +283,74 @@ ok('registry offers a self-hosted open-weights path', (byProvider.ollama || 0) +
 ok('registry offers the mock fixtures for offline runs', (byProvider.mock || 0) === 2);
 ok('registry offers Claude as one option among others', (byProvider.anthropic || 0) >= 1);
 ok('no provider dominates the registry', Object.keys(byProvider).length >= 4);
+
+/* ---- 9. Access geometry ---- */
+section('Access geometry');
+var access = load('assets/js/access.js');
+ok('distance is zero for the same point', access.distance(1.3, 103.8, 1.3, 103.8) === 0);
+/* Tuas Link to Changi Airport spans the island, about 39 km. */
+var span = access.distance(1.3402, 103.6367, 1.3573, 103.9884);
+ok('distance across the island is about 39 km', span > 38000 && span < 40000, Math.round(span) + ' m');
+/* One degree of latitude is about 111 km anywhere. */
+var deg = access.distance(1.3, 103.8, 2.3, 103.8);
+ok('one degree of latitude is about 111 km', Math.abs(deg - 111195) < 500, Math.round(deg) + ' m');
+ok('distance is symmetric',
+  Math.abs(access.distance(1.30, 103.80, 1.40, 103.90) - access.distance(1.40, 103.90, 1.30, 103.80)) < 1e-6);
+
+var openOnly = access.stations(network, future, ['open']);
+var withCommitted = access.stations(network, future, ['open', 'committed']);
+/* Interchanges appear on each of their lines, so the open tier is smaller than
+   the sum of line lengths once deduplicated. */
+ok('the open tier covers the operating network', openOnly.length > 100 &&
+  openOnly.length <= network.reduce(function (a, l) { return a + l.stations.length; }, 0), String(openOnly.length));
+ok('adding the committed tier adds stations', withCommitted.length > openOnly.length);
+ok('no speculative station counts towards access',
+  withCommitted.every(function (s) { return s.kind === 'open' || s.kind === 'committed'; }));
+/* Route anchors are existing stations reused by a future project; counting them
+   twice would make committed projects look closer than they are. */
+var names = {};
+withCommitted.forEach(function (s) { names[s.kind + '|' + s.name] = (names[s.kind + '|' + s.name] || 0) + 1; });
+ok('a station shared by two projects is counted once',
+  !Object.keys(names).some(function (k) { return names[k] > 1; }),
+  Object.keys(names).filter(function (k) { return names[k] > 1; }).join(', '));
+
+ok('a band claiming a station is adjacent is contradicted by a distant one',
+  access.checkComponent(0.2, 5000).verdict === 'contradicts');
+ok('a band claiming nothing nearby is contradicted by a close station',
+  access.checkComponent(1.0, 50).verdict === 'contradicts');
+ok('a near miss inside the margin is not called a contradiction',
+  access.checkComponent(0.2, access.WALK_M + access.MARGIN_M - 1).verdict === 'consistent');
+ok('an unknown band is reported as unchecked, not as a pass',
+  access.checkComponent(0.37, 100).verdict === 'unchecked');
+
+var audit = access.audit(areas, network, future);
+ok('every area is audited', audit.length === areas.length);
+audit.forEach(function (r) {
+  ok('area ' + r.id + ' has a nearest station', !!r.nearestAny && r.nearestAny.metres >= 0);
+  ok('area ' + r.id + ': declared access gap does not contradict the geometry',
+    r.contradictions.length === 0,
+    r.contradictions.map(function (c) { return c.reason; }).join('; '));
+});
+/* The three claims the document flagged as unsourced. */
+function nearestOf(id) { return audit.find(function (r) { return r.id === id; }).nearestAny; }
+ok('Fernvale has no MRT station within a 10-minute walk', nearestOf('fernvale').metres > access.WALK_M,
+  Math.round(nearestOf('fernvale').metres) + ' m');
+ok('Yishun East has no MRT station within a 10-minute walk', nearestOf('yishun-east').metres > access.WALK_M,
+  Math.round(nearestOf('yishun-east').metres) + ' m');
+ok('Sembawang East has no MRT station within a 10-minute walk', nearestOf('sembawang').metres > access.WALK_M,
+  Math.round(nearestOf('sembawang').metres) + ' m');
+
+/* ---- 10. Provenance of the document's own findings ---- */
+section('The document\'s findings are all still present');
+if (fsMod.existsSync(docPath)) {
+  var docText = fsMod.readFileSync(docPath, 'utf8');
+  var docFindingIds = Array.from(new Set((docText.match(/\bF\d\d\b/g) || [])))
+    .filter(function (id) { return Number(id.slice(1)) >= 1 && Number(id.slice(1)) <= 64; });
+  ok('the document defines 64 findings', docFindingIds.length === 64, String(docFindingIds.length));
+  docFindingIds.forEach(function (id) {
+    ok('document finding ' + id + ' is still in the data', !!FIND[id]);
+  });
+}
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

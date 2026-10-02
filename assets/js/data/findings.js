@@ -1,10 +1,25 @@
-/* Findings F01-F64 (Sections 3-4). Each is traceable to sources in the register. */
+/* Findings.
+
+   F01-F64 come from sections 3-4 of the vendored analysis; each is traceable to
+   sources in the register.
+
+   F65 onwards are added by maintenance of this repo, per UPDATING.md. A finding
+   normally cites sources. A finding whose evidence is a COMPUTATION over data
+   already in the repo cites no source and instead names the tool that produces
+   it: pretending a calculation is a citation would be worse than saying plainly
+   that nobody published this and we worked it out. The test suite requires one
+   or the other. */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else (root.MRT = root.MRT || {}).findings = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
   function f(id, section, text, sources, confidence) {
-    return { id: id, section: section, text: text, sources: sources.split(','), confidence: confidence };
+    return { id: id, section: section, text: text, sources: sources ? sources.split(',') : [], confidence: confidence };
+  }
+  /* A finding derived by computation rather than citation. `tool` must be a
+     path in this repo that reproduces it. */
+  function computed(id, section, text, tool, confidence) {
+    return { id: id, section: section, text: text, sources: [], method: 'computed', tool: tool, confidence: confidence };
   }
   return [
     f('F01', 'Current network', '6 MRT lines + 3 LRT systems; 246.6 km; 146 MRT stations; ~3.5 million rides/day.', 'S02,S03', 'Medium'),
@@ -70,6 +85,12 @@
     f('F61', 'Crowding', 'LTA ran free early/late morning rides for NEL stations Punggol Coast-Kovan and all Sengkang-Punggol LRT stations to shift demand; about 8% of commuters shifted out of peak; Kovan is the busiest NEL stretch, and the shift equalled adding two trains.', 'S56', 'High'),
     f('F62', 'Crowding', 'Five new City Direct bus services added Dec 2025 for Hougang, Sengkang and Punggol; 25 more LRT vehicles being added.', 'S56', 'High'),
     f('F63', 'Crowding', 'An independent analysis of passenger loads found the largest AM net inflows at NEL residential stations (Serangoon, Punggol, Sengkang) and NSL northern stations (Yishun, Admiralty, Sembawang, Khatib), attributed to a lack of alternatives.', 'S57', 'Low-Medium'),
-    f('F64', 'Crowding', 'LTA added City Direct 684 for Brickland/Bukit Batok West and extended bus services 97/97e and 181 to Tengah.', 'S20', 'High')
+    f('F64', 'Crowding', 'LTA added City Direct 684 for Brickland/Bukit Batok West and extended bus services 97/97e and 181 to Tengah.', 'S20', 'High'),
+
+    /* --- Added by maintenance, 2 October 2026 --- */
+    computed('F65', 'Access geometry', 'The analysis set each area\'s access gap by judgement "from station names and descriptions, not GIS", and listed three proximity claims as unsourced. Those claims are now checked against the map\'s own geometry: for every area, the straight-line distance from its plotted centre to the nearest open station and to the nearest committed station, against what the declared access band asserts. No declared band contradicts the geometry. The distances are straight lines between approximate coordinates, not walking routes, so differences of a few hundred metres mean nothing.', 'tools/access-check.js', 'Medium - reproducible, but from approximate coordinates'),
+    computed('F66', 'Access geometry', 'Fernvale / Sengkang West: the nearest MRT station is Buangkok, about 2.1 km in a straight line. The rail inside the subzone is the Sengkang LRT West Loop. This corroborates the previously unsourced claim that no MRT station lies inside Fernvale, and supports an access gap of 0.5.', 'tools/access-check.js', 'Medium'),
+    computed('F67', 'Access geometry', 'Yishun East: the nearest MRT station is Khatib, about 1.7 km in a straight line - more than twice a 10-minute walk. This corroborates the previously unsourced claim and supports an access gap of 0.5.', 'tools/access-check.js', 'Medium'),
+    computed('F68', 'Access geometry', 'Sembawang East: the nearest MRT station is Canberra at about 1.2 km, not Sembawang as the analysis assumed when it called the area "outside walking range of Sembawang station". Either way it is beyond a 10-minute walk, so the access gap of 0.5 stands, but the station named in the limitation was the wrong one.', 'tools/access-check.js', 'Medium')
   ];
 });

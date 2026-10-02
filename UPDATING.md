@@ -81,7 +81,7 @@ site:landtransportguru.net  <project name>
 
 1. **Authoritative station coordinates.** Current positions are approximate. LTA's open-data station locations, or OneMap, would replace them wholesale — a strict improvement with no editorial cost.
 2. **Published per-line peak load factors**, which would replace the weak grade-C basis for the crowding multiplier `C`.
-3. **A GIS walking-distance check** on the three `[UNSOURCED]` proximity claims (Fernvale, Yishun East, Sembawang East). These drive `A = 0.5` for the areas ranked 2–4; confirming or overturning them is the highest-value single check in the model.
+3. ~~A GIS walking-distance check on the three `[UNSOURCED]` proximity claims.~~ **Partly done** (2 Oct 2026): `tools/access-check.js` now audits every area's access gap against the map's own geometry and runs in the test suite; all three claims hold, and Sembawang East's nearest station turned out to be Canberra rather than Sembawang (F66–F68). What remains is real boundary and street-network data — these are straight lines between approximate coordinates, so they rule out a gross error without establishing a walking distance. URA subzone boundaries and OneMap routing would close it properly.
 
 ## 3. Before you change anything
 

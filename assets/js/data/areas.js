@@ -27,18 +27,18 @@
       lat: 1.3912, lon: 103.8760,
       components: [{ label: 'Fernvale subzone residents', kind: 'population', population: 71200, A: 0.5, T: 1.0, C: 1.5 }],
       note: '71,200 residents on LRT only, feeding an already-crowded NEL',
-      inputs: 'A = 0.5: LRT feeder only, no MRT station inside the subzone. T = 1.0: the STL is a 2040s proposition and the residents are already there. C = 1.5: LTA has actively intervened on NEL crowding.',
+      inputs: 'A = 0.5: LRT feeder only - the nearest MRT station is Buangkok, about 2.1 km away (F66, computed). T = 1.0: the STL is a 2040s proposition and the residents are already there. C = 1.5: LTA has actively intervened on NEL crowding.',
       why: '71,200 residents in 2025, up 12,400 in five years, served by LRT feeding an already-crowded NEL. LTA ran free off-peak rides here to shift about 8% of commuters out of peak - the equivalent of adding two trains. The minister named Sengkang West as the first priority corridor for the Seletar Line.',
-      f: ['F36', 'F37', 'F61', 'F62', 'F19', 'F23'], s: ['S54', 'S56', 'S18', 'S20'], p: ['P07']
+      f: ['F36', 'F37', 'F61', 'F62', 'F19', 'F23', 'F65', 'F66'], s: ['S54', 'S56', 'S18', 'S20'], p: ['P07']
     },
     {
       id: 'yishun-east', name: 'Yishun East', rank: 3, docDGI: 14.7, verdict: 'gap',
       lat: 1.4200, lon: 103.8480,
       components: [{ label: 'Yishun East subzone residents', kind: 'population', population: 73440, A: 0.5, T: 1.0, C: 1.2 }],
       note: '73,440 residents, NSL only, no station inside the subzone',
-      inputs: 'A = 0.5: NSL only, with no station inside the subzone (this proximity claim is unsourced - judged from station names, not GIS). C = 1.2: independent load analysis flags Yishun among the largest morning inflows.',
+      inputs: 'A = 0.5: NSL only, with no station inside the subzone - the nearest is Khatib, about 1.7 km away, more than twice a 10-minute walk (F67, computed). C = 1.2: independent load analysis flags Yishun among the largest morning inflows.',
       why: '73,440 residents and growing, on a single line. The catch: Yishun is not one of LTA’s named Seletar Line catchments, so a station here needs LTA to add one - which is why the forecast sits at only 35% despite the third-highest demand gap.',
-      f: ['F41', 'F42', 'F63'], s: ['S54', 'S57'], p: ['P11']
+      f: ['F41', 'F42', 'F63', 'F65', 'F67'], s: ['S54', 'S57'], p: ['P11']
     },
     {
       id: 'sembawang', name: 'Sembawang East + Shipyard', rank: 4, docDGI: 14.5, verdict: 'gap',
@@ -48,9 +48,9 @@
         { label: 'Sembawang Shipyard homes', kind: 'homes', homes: 10, A: 0.8, T: 1.0, C: 1.2 }
       ],
       note: 'Shipyard homes land in the 2030s; the studied line is a 2040s proposition',
-      inputs: 'Two components: existing residents (A = 0.5, NSL only) and the shipyard redevelopment (A = 0.8, waterfront site away from the station). T = 1.0 for both: the shipyard homes land in the 2030s, the STL in the 2040s.',
+      inputs: 'Two components: existing residents (A = 0.5, NSL only - nearest station is Canberra at about 1.2 km, not Sembawang as the analysis assumed; F68, computed) and the shipyard redevelopment (A = 0.8, waterfront site away from any station). T = 1.0 for both: the shipyard homes land in the 2030s, the STL in the 2040s.',
       why: 'The shipyard relocates by 2028, freeing roughly 10,000 waterfront homes, on top of a subzone that added 7,280 residents with no station inside it. Sembawang is a named Seletar Line catchment, but the timing is backwards - homes in the 2030s, rail in the 2040s.',
-      f: ['F39', 'F40', 'F53', 'F63', 'F19'], s: ['S54', 'S70', 'S71', 'S57', 'S12'], p: ['P10']
+      f: ['F39', 'F40', 'F53', 'F63', 'F19', 'F65', 'F68'], s: ['S54', 'S70', 'S71', 'S57', 'S12'], p: ['P10']
     },
     {
       id: 'punggol', name: 'Punggol', rank: 5, docDGI: 10.2, verdict: 'gap',

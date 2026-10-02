@@ -217,7 +217,7 @@ The suite lives with the repo that owns the corpus, not inside the package:
 npm run test:research      # from the repo root
 ```
 
-355 assertions, no network: provider adapters are verified against a stubbed
+357 assertions, no network: provider adapters are verified against a stubbed
 fetch (including that `temperature` is omitted for the models that reject it and
 sent for the ones that accept it), the tolerant JSON repair path, every metric,
 every task's shape, search determinism, that garbage never scores as correct,

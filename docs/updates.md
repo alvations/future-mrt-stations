@@ -61,3 +61,26 @@ feature the commit added.
 355 harness assertions, up from 335. The new ones cover a packaged copy loading
 and answering `--help` with no corpus, running against an external one, the
 missing-corpus error text, and the report naming its corpus.
+
+## 2026-10-02 — access gaps checked against geometry
+
+The analysis set every area's access gap by judgement "from station names and
+descriptions, not GIS", and listed three proximity claims as `[UNSOURCED]`.
+Those claims drive `A = 0.5` for the areas ranked 2–4, so they carried more
+weight than anything else unverified in the model.
+
+- **`assets/js/access.js`** computes the straight-line distance from an area's centre to the nearest open station and the nearest committed one, and says whether a declared access band contradicts that geometry. Speculative tiers are excluded on purpose: measuring an access gap against a line this analysis invented would assume its own conclusion.
+- **`tools/access-check.js`** audits all fourteen areas and exits non-zero on a contradiction. It runs in the test suite, so adding a station that should change an area's access gap can no longer pass silently.
+- **All three claims hold.** Fernvale's nearest MRT is Buangkok at about 2.1 km, Yishun East's is Khatib at about 1.7 km, Sembawang East's is Canberra at about 1.2 km — each well beyond the 800 m that stands in for a 10-minute walk. No band anywhere contradicts the geometry.
+- **One correction:** the document called Sembawang East "outside walking range of Sembawang station". Its nearest station is in fact Canberra. The conclusion is unchanged; the station named was wrong (F68).
+- The app now shows the distance in every demand-gap card, so the access gap is a number a reader can check rather than a judgement to accept.
+
+**What this is not.** Straight lines between approximate coordinates, not walking
+routes. It rules out a gross error; it does not establish walking distance. URA
+subzone boundaries and OneMap routing would close that gap, and both are blocked
+from this environment.
+
+Findings F65–F68 are the first in this repo marked `computed`: they rest on a
+named tool rather than a citation, because dressing a calculation up as a source
+would be worse than saying plainly that nobody published this and we worked it
+out. The suite requires every finding to have one or the other.

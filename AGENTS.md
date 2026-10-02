@@ -114,6 +114,10 @@ assets/js/data/areas.js     14 Demand Gap Index areas
 assets/js/data/predictions.js  22 forecasts P01-P22
 assets/js/geo.js            projection, route smoothing
 assets/js/dgi.js            the index model, shared by browser and tests
+assets/js/access.js         access geometry: distance to the nearest open or
+                            committed station, shared by the app, the audit
+                            tool and the tests
+tools/access-check.js       audits every area's access gap against that geometry
 assets/js/app.js            node merging, rendering, declutter, panel, routing
 test/app.test.js            the map and data suite, no dependencies
 test/research.test.js       the harness suite, no network
@@ -276,5 +280,5 @@ package and would creep back silently.
 
 - **The document's own sensitivity table does not reproduce for Sembawang.** It prints 14.8 and 14.3 at 2.5 and 3.5 residents per home; recomputing from its stated inputs gives 15.5 and 13.8. Its conclusions hold, so the app shows computed values and the tests assert the conclusions rather than those two cells.
 - **Station coordinates are approximate**, entered from knowledge of the network rather than a survey. Line topology and station order are reliable; positions are within a few hundred metres. Replacing them with an authoritative dataset would be a strict improvement — see UPDATING.md §2.
-- **Three proximity claims are unsourced** in the document itself and inherited here: that Fernvale, Yishun East and Sembawang East have no station inside them. They are marked `[UNSOURCED]` in the document and drive `A = 0.5` for three areas. A GIS check would firm up or overturn ranks 2–4.
+- **The three proximity claims the document marked `[UNSOURCED]`** - that Fernvale, Yishun East and Sembawang East have no station inside them - are now checked against the map's own geometry by `tools/access-check.js`, which runs in the test suite. All three hold: the nearest MRT is 2.1 km, 1.7 km and 1.2 km away respectively. One detail was wrong: Sembawang East's nearest station is Canberra, not Sembawang (F68). This is a reproducible computation over approximate coordinates, not a GIS study - it rules out the gross error, it does not establish walking distance. Real boundary data would still be an improvement.
 - **Crowding inputs are thin.** `C` rests on LTA's interventions (strong) and one independent analysis (weak, grade C). Published per-line load factors would replace both.

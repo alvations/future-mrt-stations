@@ -80,11 +80,26 @@ ok('brier scores resolved outcomes',
 
 /* ---- 3. Tasks ---- */
 section('Tasks are well formed');
-var EXPECT_ITEMS = { 'grade-sources': 79, 'attribute-findings': 64, 'find-sources': 64, 'score-dgi': 14, 'verify-corrections': 10, forecast: 22 };
+/* Item counts are derived from the corpus, not hardcoded: maintenance adds
+   findings and sources by design, and a task's contract is "one item per
+   record", which is the thing worth asserting. verify-corrections is the
+   exception - its items come from a fixture, not the corpus. */
+var corpus = require(path.join(R, 'lib', 'dataset.js'));
+var EXPECT_ITEMS = {
+  'grade-sources': corpus.sources.length,
+  'attribute-findings': corpus.findings.length,
+  'find-sources': corpus.findings.filter(function (f) {
+    return f.sources.length && corpus.sources.some(function (s) { return s.id === f.sources[0]; });
+  }).length,
+  'score-dgi': corpus.areas.length,
+  'verify-corrections': 10,
+  forecast: corpus.predictions.length
+};
+ok('the corpus is non-trivial', corpus.sources.length >= 79 && corpus.findings.length >= 64);
 tasksReg.DEFAULT_ORDER.forEach(function (id) {
   var task = tasksReg.TASKS[id];
   var items = task.items();
-  ok(id + ': item count', items.length === EXPECT_ITEMS[id], items.length + ' vs ' + EXPECT_ITEMS[id]);
+  ok(id + ': one item per record', items.length === EXPECT_ITEMS[id], items.length + ' vs ' + EXPECT_ITEMS[id]);
   ok(id + ': declares what it measures', !!task.measures && !!task.headline);
   items.slice(0, 3).forEach(function (item) {
     var p = task.prompt(item);
@@ -387,8 +402,12 @@ section('Provider adapters send the right request');
   var repoCounts = JSON.parse(cp.execFileSync(process.execPath, ['-e',
     'console.log(JSON.stringify(require(process.argv[1]).describe()))', path.join(R, 'lib', 'dataset.js')],
     { env: cleanEnv, encoding: 'utf8' }));
-  ok('the repo corpus has the expected counts', repoCounts.counts.sources === 79 && repoCounts.counts.findings === 64 &&
+  /* Sources, areas and forecasts are pinned to the vendored document by the map
+     suite's provenance check. Findings grow as maintenance adds them, so the
+     floor is what the document established. */
+  ok('the repo corpus matches the pinned counts', repoCounts.counts.sources === 79 &&
     repoCounts.counts.areas === 14 && repoCounts.counts.predictions === 22, JSON.stringify(repoCounts.counts));
+  ok('the repo corpus keeps at least the document\'s findings', repoCounts.counts.findings >= 64, String(repoCounts.counts.findings));
   ok('the repo corpus resolves via the checkout', repoCounts.resolvedVia === 'repo', repoCounts.resolvedVia);
   ok('whatever corpus is in use reports self-consistent counts',
     d.counts.sources === dataset.sources.length && d.counts.findings === dataset.findings.length);

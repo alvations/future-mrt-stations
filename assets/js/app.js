@@ -6,7 +6,7 @@
   'use strict';
 
   var D = MRT;
-  var geo = D.geo, dgiModel = D.dgi;
+  var geo = D.geo, dgiModel = D.dgi, accessModel = D.access;
   var byId = function (arr) {
     var m = {};
     arr.forEach(function (x) { m[x.id] = x; });
@@ -485,6 +485,25 @@
     }).join('');
   }
 
+  /* Distance from the area's centre to the nearest rail, computed rather than
+     asserted - it is what the access gap is supposed to encode. */
+  var accessAudit = {};
+  accessModel.audit(D.areas, D.network, D.future).forEach(function (r) { accessAudit[r.id] = r; });
+
+  function accessLine(areaId) {
+    var r = accessAudit[areaId];
+    if (!r || !r.nearestAny) return '';
+    var open = r.nearestOpen;
+    var any = r.nearestAny;
+    var txt = 'Nearest rail: <strong>' + esc(any.name) + '</strong> ' + accessModel.format(any.metres) +
+      (any.kind === 'committed' ? ' (committed)' : '');
+    if (any.kind === 'committed' && open && open.name !== any.name) {
+      txt += ', nearest open today ' + esc(open.name) + ' ' + accessModel.format(open.metres);
+    }
+    return '<p class="dim" style="margin:8px 0 0">' + txt +
+      '. Straight line from the area centre, not a walk; a 10-minute walk is about ' + accessModel.WALK_M + ' m.</p>';
+  }
+
   function dgiBlock(areaId) {
     var a = AREA[areaId];
     if (!a) return '';
@@ -498,6 +517,7 @@
       '<span class="card-label">Rank ' + a.rank + ' of 14 &middot; ' + (a.verdict === 'covered' ? 'already served' : 'unmet need') + '</span></div>' +
       '<table class="mini"><thead><tr><th>Component</th><th>H</th><th>A</th><th>T</th><th>C</th><th>DGI</th></tr></thead><tbody>' + rows + '</tbody></table>' +
       '<p class="dim" style="margin:10px 0 0">' + esc(a.inputs) + '</p>' +
+      accessLine(a.id) +
       '</div><p>' + esc(a.why) + '</p>' +
       '<button class="ghost-btn" data-go="area/' + a.id + '">Open the full demand-gap breakdown &rarr;</button>';
   }
@@ -622,6 +642,7 @@
           '</td><td class="num">' + c.T + '</td><td class="num">' + c.C.toFixed(1) + '</td><td class="num">' + c.value.toFixed(1) + '</td></tr>';
       }).join('') + '</tbody></table></div>';
     html += '<h3>Why this score</h3><p>' + esc(a.why) + '</p><p class="dim">' + esc(a.inputs) + '</p>';
+    html += '<div class="card">' + accessLine(a.id).replace('style="margin:8px 0 0"', 'style="margin:0"') + '</div>';
     html += '<h3>Sensitivity</h3><div class="card"><table class="mini"><thead><tr><th>Assumption</th><th>DGI</th><th>Rank</th></tr></thead><tbody>' +
       sens + '</tbody></table><p class="dim" style="margin:10px 0 0">H for existing residents is population divided by residents per home; announced housing counts do not move with that assumption.</p></div>';
     html += predictionsBlock(a.p || []);
