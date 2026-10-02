@@ -15,7 +15,7 @@
   var SRC = byId(D.sources), FIND = byId(D.findings), PRED = byId(D.predictions), AREA = byId(D.areas);
   var PROJ = byId(D.future);
 
-  var KLASS_RANK = { existing: 0, committed: 1, study: 2, model: 3 };
+  var KLASS_RANK = { existing: 0, lrt: 0, committed: 1, study: 2, model: 3 };
   var PLACEMENT_RANK = { sited: 0, indicative: 1, model: 2 };
   var PLACEMENT_TEXT = {
     sited: 'Location officially known (plotted approximately)',
@@ -23,6 +23,7 @@
     model: 'NOT an official location - this analysis’s illustration'
   };
   var KLASS_TEXT = {
+    lrt: 'Light rail, open today',
     existing: 'Open today',
     committed: 'Committed / under construction',
     study: 'Under study - no alignment published',
@@ -73,6 +74,16 @@
     });
   });
 
+  (D.lrt || []).forEach(function (line) {
+    line.stations.forEach(function (s) {
+      var n = touch(s.lat, s.lon);
+      if (n.names.indexOf(s.name) < 0) n.names.push(s.name);
+      if (n.codes.indexOf(s.code) < 0) n.codes.push(s.code);
+      n.lrt = n.lrt || [];
+      if (n.lrt.indexOf(line) < 0) n.lrt.push(line);
+    });
+  });
+
   D.future.forEach(function (proj) {
     proj.stations.forEach(function (s) {
       var n = touch(s.lat, s.lon);
@@ -96,6 +107,7 @@
     n.name = fromLine || n.names[0];
     n.alt = n.names.filter(function (x) { return x !== n.name; });
     n.isFuture = n.projects.some(function (r) { return !r.anchor; });
+    if (!n.lines.length && n.lrt && n.lrt.length && n.klass === 'existing') n.klass = 'lrt';
     n.dgi = null;
     n.projects.forEach(function (r) {
       if (!n.dgi && r.station.dgi) n.dgi = r.station.dgi;
@@ -157,6 +169,13 @@
     addRoute(line.stations.map(function (s) { return { lat: s.lat, lon: s.lon }; }), line.color, 'existing');
   });
 
+  /* Light rail, drawn as its own tier. It is context for the heavy-rail
+     argument - Fernvale ranks second precisely because it has only this - so it
+     stays visually subordinate and is never counted as MRT access. */
+  (D.lrt || []).forEach(function (line) {
+    addRoute(line.stations.map(function (s) { return { lat: s.lat, lon: s.lon }; }), line.color, 'lrt', 'lrt:' + line.id);
+  });
+
   D.future.forEach(function (proj) {
     var lookup = {};
     proj.stations.forEach(function (s) { lookup[s.code] = [s.lat, s.lon]; });
@@ -199,6 +218,8 @@
       else if (n.lines.length) strokeColor = n.lines[0].color;
     } else if (n.lines.length) {
       strokeColor = n.lines[0].color;
+    } else if (n.lrt && n.lrt.length) {
+      strokeColor = n.lrt[0].color;
     }
     var cls = 'node ' + n.klass + (n.dgi ? ' is-dgi' : '');
     /* Only places with something new planned join the tab order; tabbing
@@ -225,6 +246,9 @@
     n.labelW = n.name.length * 6.8 + 14;
     n.priority = n.klass === 'model' ? 5 : n.klass === 'study' ? 5
       : n.klass === 'committed' ? 3 : n.lines.length > 1 ? 1 : 0;
+    /* Fernvale is the one LRT station the argument turns on, so it earns a
+       label at the same tier as an interchange. */
+    if (n.klass === 'lrt' && n.name === 'Fernvale') n.priority = 3;
   });
 
   /* ------------------------------------------------------------------
@@ -257,7 +281,7 @@
     var pad = 60;
     var q = sym;
     var placed = [];
-    var minZoom = { 5: 0, 3: 0.9, 1: 1.7, 0: 2.6 };
+    var minZoom = { 5: 0, 4: 0.9, 3: 0.9, 1: 1.7, 0: 2.6 };
 
     function tryPlace(box) {
       for (var i = 0; i < placed.length; i++) if (overlaps(box, placed[i])) return false;
@@ -406,7 +430,7 @@
   /* ------------------------------------------------------------------
      Layer toggles
      ------------------------------------------------------------------ */
-  var layerState = { existing: true, committed: true, study: true, model: true, demand: true };
+  var layerState = { existing: true, lrt: true, committed: true, study: true, model: true, demand: true };
   function applyLayers() {
     routeEls.forEach(function (p) {
       var k = p.getAttribute('data-klass');
@@ -543,6 +567,7 @@
       chip(KLASS_TEXT[n.klass], n.klass === 'existing' ? 'open' : 'strong') +
       (n.placement ? chip(n.placement === 'sited' ? 'Sited' : n.placement === 'indicative' ? 'Indicative position' : 'Model guess', n.placement) : '') +
       n.lines.map(function (l) { return chip(l.name, 'open'); }).join('') +
+      (n.lrt || []).map(function (l) { return chip(l.name, 'open'); }).join('') +
       '</div>';
 
     if (n.placement === 'model') {
@@ -576,6 +601,15 @@
     html += predictionsBlock(p);
     html += findingsBlock(f);
     html += sourcesBlock(s);
+    if (n.lrt && n.lrt.length) {
+      html += '<h3>Light rail here</h3>';
+      n.lrt.forEach(function (l) {
+        html += '<div class="card"><div class="card-label">' + esc(l.name) + '</div>' +
+          (l.note ? '<p style="margin:6px 0 0">' + esc(l.note) + '</p>' : '') + '</div>';
+      });
+      html += '<p class="dim">Light rail is shown for context. The demand index measures access to heavy rail, so an LRT station does not close an area\u2019s access gap - which is the whole reason Fernvale ranks second.</p>';
+    }
+
     if (!live.length && n.lines.length) {
       html += '<h3>Lines here</h3>' + n.lines.map(function (l) {
         return '<div class="src"><span style="width:14px;height:4px;border-radius:2px;background:' + l.color + ';display:inline-block"></span><span>' + esc(l.name) + '</span></div>';
@@ -751,7 +785,11 @@
     var b = t.closest('[data-area]');
     if (b) return 'area/' + b.getAttribute('data-area');
     var r = t.closest('[data-ref]');
-    if (r) return r.getAttribute('data-ref').replace(':', '/');
+    if (r) {
+      var ref = r.getAttribute('data-ref');
+      if (ref.indexOf('lrt:') === 0) return null;   /* no detail page for an LRT line */
+      return ref.replace(':', '/');
+    }
     return null;
   }
   svg.addEventListener('click', function (e) {

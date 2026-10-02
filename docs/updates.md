@@ -84,3 +84,14 @@ Findings F65–F68 are the first in this repo marked `computed`: they rest on a
 named tool rather than a citation, because dressing a calculation up as a source
 would be worse than saying plainly that nobody published this and we worked it
 out. The suite requires every finding to have one or the other.
+
+## 2026-10-02 — light rail added to the map
+
+The map showed no LRT at all, which undersold its own central argument: Fernvale
+is the second-ranked demand area precisely because its 71,200 residents have
+light rail and no MRT. An argument about what a place lacks reads better when
+you can see what it has.
+
+- All three systems added as a distinct, visually subordinate tier: Bukit Panjang, and both loops each of Sengkang and Punggol. Separate layer toggle.
+- Kept **out** of `assets/js/data/network.js` on purpose. `assets/js/access.js` measures the access gap against heavy rail; folding LRT into the MRT network would quietly close the very gap the analysis is about. The LRT file says so at the top, and the station panel says so to the reader.
+- Fernvale gets an interchange-tier label despite being an LRT station, because it is the one light-rail station the argument turns on.

@@ -118,16 +118,19 @@ svg#map.dragging { cursor: grabbing; }
 
 .route { fill: none; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .route.existing { stroke-width: 3.5; opacity: .5; }
+.route.lrt { stroke-width: 2; opacity: .5; stroke-dasharray: 1 5; stroke-linecap: round; }
 .route.committed { stroke-width: 5; opacity: .95; }
 .route.study { stroke-width: 5; opacity: .95; stroke-dasharray: 13 9; }
 .route.model { stroke-width: 5; opacity: .9; stroke-dasharray: 3 9; }
 .route.halo { stroke: var(--bg); stroke-width: 9; opacity: .55; pointer-events: none; }
-.route.existing { pointer-events: none; }
+.route.existing, .route.lrt { pointer-events: none; }
 
 .node { cursor: pointer; }
 .node circle.hit { fill: transparent; stroke: none; }
 .node circle.dot { stroke-width: 2; }
 .node.existing circle.dot { fill: var(--bg); stroke-opacity: .55; r: 3.4; }
+.node.lrt circle.dot { fill: var(--bg); stroke-opacity: .5; r: 2.6; stroke-width: 1.6; }
+.node.lrt text.label { font-weight: 500; font-size: 11px; fill: var(--fg-faint); }
 .node.committed circle.dot { fill: var(--bg); r: 5.4; }
 .node.study circle.dot { fill: var(--bg); r: 6; }
 .node.model circle.dot { fill: var(--bg); r: 6; stroke-dasharray: 3 2.5; }
